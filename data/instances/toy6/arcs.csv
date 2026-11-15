@@ -1,0 +1,8 @@
+from,to,length_km,line_capacity_trains_per_day
+A,B,150,40
+B,C,200,40
+B,D,180,40
+C,D,120,40
+C,E,220,40
+D,E,160,40
+E,F,140,40

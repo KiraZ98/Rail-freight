@@ -1,0 +1,11 @@
+id,origin,destination,category,cars_per_day,revenue_per_car
+d01,A,F,express,15,1890
+d02,A,E,bulk,40,735
+d03,A,C,bulk,30,525
+d04,B,F,bulk,35,720
+d05,C,F,express,10,1080
+d06,D,A,bulk,25,495
+d07,F,A,bulk,45,945
+d08,E,B,express,12,1020
+d09,C,D,bulk,20,180
+d10,F,C,bulk,30,540

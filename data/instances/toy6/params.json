@@ -1,0 +1,9 @@
+{
+  "_note": "Service classes follow Xin (2022). cars_per_track follows Xiao et al. (2020). ALL cost values here and in service_classes.csv, and all revenues in demands.csv, are PLACEHOLDERS (revenue = 3.0 per car-km express, 1.5 bulk, on the shortest path). Replace them once calibrated against Xin et al. (2025).",
+  "cars_per_track": 200,
+  "car_cost_per_km": 0.5,
+  "reclass_cost_per_car": 30.0,
+  "accumulation_cost_per_car_hour": 1.0,
+  "accumulation_parameter_hours": 10.0,
+  "over_capacity_penalty_per_car": 100.0
+}

@@ -1,1 +1,11 @@
 ~$*
+
+__pycache__/
+*.pyc
+.venv/
+*.lp
+*.ilp
+*.sol
+gurobi.log
+results/*
+!results/.gitkeep
