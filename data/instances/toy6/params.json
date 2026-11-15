@@ -5,5 +5,15 @@
   "reclass_cost_per_car": 30.0,
   "accumulation_cost_per_car_hour": 1.0,
   "accumulation_parameter_hours": 10.0,
-  "over_capacity_penalty_per_car": 100.0
+  "over_capacity_penalty_per_car": 100.0,
+  "allowed_classes": {
+    "express": [
+      "express"
+    ],
+    "bulk": [
+      "express",
+      "fast",
+      "ordinary"
+    ]
+  }
 }
