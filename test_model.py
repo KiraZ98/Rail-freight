@@ -7,6 +7,7 @@ from pathlib import Path
 
 from model import POLICIES, solve
 from read_data import read_data
+from two_stage import solve_two_stage
 
 XIN2025 = Path(__file__).parent / "data" / "instances" / "xin2025_example"
 XIN2022 = Path(__file__).parent / "data" / "instances" / "xin2022_example"
@@ -25,6 +26,30 @@ def test_xin2025_published_optimum():
     # two of the routes of Table 12
     assert result["routes"]["d01"] == [("1", "3", "Fast")]
     assert result["routes"]["d19"] == [("6", "4", "Ordinary"), ("4", "7", "Ordinary")]
+
+
+def test_xin2025_practical_approach():
+    # Xin, Wu & Wang (2025), Section 6.2.3 and Table 13: the practical two-stage approach
+    # earns 1,443,781.93 (express) + 4,213,154.48 (non-express) = 5,656,936.41 CNY, 24 demands accepted
+    data = read_data(XIN2025)
+    result = solve_two_stage(data, practical=True)
+    assert abs(result["profit_express"] - 1443781.93) < 0.01
+    assert abs(result["profit_non_express"] - 4213154.48) < 0.01
+    assert abs(result["profit"] - 5656936.41) < 0.01
+    assert abs(result["total_cost"] - 9231643.59) < 0.01
+    rejected = [k for k in data["demands"] if k not in result["accepted"]]
+    assert rejected == ["d06", "d11", "d17", "d22", "d24", "d29"]
+    # two routes that differ from the integrated solution (Table 13 against Table 12)
+    assert result["routes"]["d01"] == [("1", "8", "Ordinary"), ("8", "3", "Ordinary")]
+    assert result["routes"]["d20"] == [("6", "7", "Fast")]
+
+
+def test_two_stage_never_beats_integrated():
+    # Planning in two stages can never earn more than planning everything together
+    data = read_data(XIN2025)
+    integrated = solve(data)["profit"]
+    assert solve_two_stage(data, practical=False)["profit"] <= integrated + 0.01
+    assert solve_two_stage(data, practical=True)["profit"] <= integrated + 0.01
 
 
 def test_xin2022_published_optimum():
@@ -103,6 +128,8 @@ def test_no_revenue_no_service():
 
 if __name__ == "__main__":
     test_xin2025_published_optimum()
+    test_xin2025_practical_approach()
+    test_two_stage_never_beats_integrated()
     test_xin2022_published_optimum()
     test_time_limit_by_hand()
     test_cost_adds_up()

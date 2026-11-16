@@ -25,4 +25,6 @@ of Table 12 (cars / train size x train cost + cars x mileage x unit car cost) eq
   accepted (Table 12). Rejected: (3, 8, Vegetable), (7, 1, Metal Ore), (8, 1, Cotton),
   (8, 6, Chemical fertilizer).
 - Practical two-stage approach: profit 5,656,936.41 CNY (1,443,781.93 express +
-  4,213,154.48 non-express), 24 shipments accepted (Table 13). Not reproduced yet.
+  4,213,154.48 non-express), costs 9,231,643.59 CNY, 24 shipments accepted (Table 13).
+
+Both are reproduced exactly by `test_model.py`.

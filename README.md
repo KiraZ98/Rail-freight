@@ -15,6 +15,7 @@ A value without a source is left blank, not guessed.
 | `read_data.py` | Step 1: reads the CSV files of an instance into one dictionary |
 | `model.py` | Step 2: builds the Gurobi model and solves it |
 | `main.py` | Step 3: runs the model for the three policies and prints the results |
+| `two_stage.py` | Two-stage approach: express demands first, then non-express (decomposition or practical approach) |
 | `test_model.py` | Checks that the model reproduces the published results |
 | `data/instances/xin2025_example/` | 8-station case of the base paper (Tables 10-12 and its services file) |
 | `data/instances/xin2022_example/` | 5-station example of Xin (2022), Tables 4-8 |
@@ -56,6 +57,15 @@ print(result["profit"], result["accepted"], result["routes"])
 `data` is a plain dictionary, so single values can be changed before solving, for example
 `data["classification_capacity"]["3"] = 500`.
 
+The two-stage approach has the same options:
+
+```python
+from two_stage import solve_two_stage
+
+result = solve_two_stage(data, practical=True)   # hierarchical planning used in practice
+result = solve_two_stage(data, practical=False)  # decomposition [TM-1] + [TM-2]
+```
+
 ## The model
 
 Model [OM] of the base paper, equations (1)-(13): profit objective, flow conservation,
@@ -76,6 +86,9 @@ penalty, and the eps-constraint on demand served.
 | Base paper, 8-station case (Table 12): profit | 7,154,039.94 CNY | 7,154,039.94 CNY |
 | total costs | 10,399,404.06 CNY | 10,399,404.06 CNY |
 | accepted shipments | 26 of 30 | 26 of 30, same four rejected, same routes |
+| Base paper, practical two-stage approach (Table 13): profit | 5,656,936.41 CNY | 5,656,936.41 CNY |
+| stage profits (express + non-express) | 1,443,781.93 + 4,213,154.48 | 1,443,781.93 + 4,213,154.48 |
+| accepted shipments | 24 of 30 | 24 of 30, same six rejected |
 | Xin (2022), 5-station example: cost | 23,000 CNY | 23,000 CNY |
 
 ## First observations on the 8-station case (preliminary)
@@ -84,6 +97,8 @@ penalty, and the eps-constraint on demand served.
   constraints (6) and (7) are not active in the paper's own example.
 - Profit by policy at the published capacities: inseparable 7,160,783, mixed 7,154,040,
   intree 6,617,672 CNY.
+- Two-stage decomposition without class restriction: 6,617,672 CNY, 7.5 % below the
+  integrated model (the paper reports 0.90 % on average over its random instances).
 - Scaling all station capacities down has no effect until about 30 %. Below that the gap
   between mixed and intree shrinks and is zero at 20 % and below.
 
@@ -107,7 +122,6 @@ A blank cell means the source gives no value.
 
 | Item | Source to use |
 |---|---|
-| Practical two-stage approach (Table 13: 5,656,936.41 CNY) | Base paper, Fig. 3(a) and Section 6.2.3 |
 | Greedy heuristic for the second stage (RQ2) | Base paper, Algorithm 2 |
 | Random instances (RQ2) | Base paper, Section 6.1.1, equations (47)-(49) |
 | Track limit per yard (one track per 200 cars) | Lin et al. (2021), constraint (14) |
