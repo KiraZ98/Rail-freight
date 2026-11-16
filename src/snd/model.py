@@ -1,25 +1,27 @@
-"""Simplified service network design MILP with blocking policies.
+"""Service network design MILP with blocking policies.
 
-NOT yet checked against the equations of Xin, Wu & Wang (2025): it is built from the
-standard train formation / blocking formulations and has to be compared with the paper.
+Built on the integer model of Xin (2022), PLOS ONE 17(12): e0276671, equations (1)-(8):
 
-Modelling choices
------------------
-* A service (i, j, c) is a direct train of class c from yard i to yard j that runs on the
-  shortest rail path and is not reclassified on the way. One block per train.
-* Every demand is accepted or rejected as a whole (binary), and an accepted demand follows
-  one sequence of services. Cars are reclassified at every yard where they change service.
-* Inseparable policy: each demand chooses its own service sequence.
-* Intree policy: at a yard, all cars of the same category and the same destination leave on
-  the same service, whatever their origin (one tree per destination and category).
-* Profit = revenue - train cost - car haul cost - reclassification cost - accumulation cost
-  (- penalty for flow above yard capacity if `elastic`).
-  Accumulation cost is a fixed daily cost per operated service:
-  accumulation_cost_per_car_hour * accumulation_parameter_hours * max_cars.
-* Line capacity counts trains per day and direction on every line of the shortest path.
+* (1) cost = train cost per train x frequency + car cost per car-km x mileage x cars
+* (2) flow balance: each shipment follows one chain of train services
+* (3) nonseparable shipments: one service per leg, the whole volume together
+* (4) transportation time limit for express goods: running time + accumulation time at the
+      origin (tau^AC x train size) + transfer time at each intermediate station (tau^TF x train size)
+* (5) tree-shaped paths for non-express goods; implemented here as the intree rule (all
+      non-express cars at a yard with the same destination leave on the same service), the
+      blocking-policy form used by Xin, Wu & Wang (2025)
+* (6) train capacity: cars on a service <= train size x frequency
 
-Role B calls `solve` inside the two-stage decomposition and the benchmark; role C calls it
-for the epsilon-constraint runs and reads `Solution` for metrics and plots.
+Extensions, all optional, switched off when their data are not given:
+
+* revenue and demand rejection (profit objective of Xin, Wu & Wang 2025), with
+  eps-constraint DemandServed >= eps x TotalDemand (Miettinen 1998); eps = 1 gives the
+  cost-minimising model of Xin (2022) where all demand must be served
+* yard reclassification capacity, hard or elastic (Lin et al. 2021)
+* line capacity, when services are generated on known paths
+* reclassification and accumulation cost (params.json), 0 when not given
+
+NOT yet checked against the equations of Xin, Wu & Wang (2025), which is not available yet.
 """
 from __future__ import annotations
 
@@ -28,7 +30,7 @@ from dataclasses import dataclass, field
 
 from .instance import Instance
 
-# policy -> blocking rule per demand category
+# policy -> blocking rule for express and non-express goods
 POLICIES = {
     "mixed": {"express": "inseparable", "bulk": "intree"},
     "intree": {"express": "intree", "bulk": "intree"},
@@ -54,6 +56,8 @@ class Solution:
     reclass_yards: dict[str, list[str]] = field(default_factory=dict)
     # yard id -> cars reclassified per day
     yard_throughput: dict[str, float] = field(default_factory=dict)
+    # demand id -> transportation time in hours by constraint (4) of Xin (2022)
+    travel_time_h: dict[str, float] = field(default_factory=dict)
     # revenue and the individual cost terms
     breakdown: dict[str, float] = field(default_factory=dict)
 
@@ -61,22 +65,9 @@ class Solution:
     def service_level(self) -> float:
         return self.demand_served / self.total_demand if self.total_demand else 0.0
 
-
-def shortest_path_arcs(instance: Instance, dist: dict) -> dict[tuple[str, str], list[tuple[str, str]]]:
-    """Directed lines on the shortest path for every ordered yard pair."""
-    length = {(a.tail, a.head): a.length_km for a in instance.arcs}
-    paths = {}
-    for (i, j) in dist:
-        cur, arcs = i, []
-        while cur != j:
-            nxt = next(
-                v for (t, v), km in length.items()
-                if t == cur and abs(km + (dist[v, j] if v != j else 0.0) - dist[cur, j]) < 1e-6
-            )
-            arcs.append((cur, nxt))
-            cur = nxt
-        paths[i, j] = arcs
-    return paths
+    @property
+    def total_cost(self) -> float:
+        return sum(v for k, v in self.breakdown.items() if k != "revenue")
 
 
 def solve(
@@ -90,14 +81,14 @@ def solve(
 ) -> Solution:
     """Solve the service network design model.
 
-    policy         "mixed" (express inseparable, bulk intree), "intree" or "inseparable"
-                   (the same rule for both categories).
-    yard_capacity  yard id -> reclassification limit in cars per day. None = no limit
-                   (the 100 % scenario). For 80 % / 60 %, pass that share of the
-                   `yard_throughput` of the reference run.
+    policy         "mixed" (express inseparable, non-express intree), "intree" or
+                   "inseparable" (the same rule for all goods).
+    yard_capacity  yard id -> reclassification limit in cars per day. None = the
+                   capacities in nodes.csv where given, otherwise no limit.
     elastic        False = hard limit; True = flow above the limit is penalised with
-                   params["over_capacity_penalty_per_car"].
-    eps            if given, adds DemandServed >= eps * TotalDemand (RQ3).
+                   params["over_capacity_penalty_per_car"] (Lin et al. 2021 use 1500).
+    eps            if given, adds DemandServed >= eps * TotalDemand. eps = 1 serves all
+                   demand, as in Xin (2022).
     time_limit     Gurobi time limit in seconds.
     """
     if policy not in POLICIES:
@@ -107,35 +98,38 @@ def solve(
 
     rule = POLICIES[policy]
     P = instance.params
+    yards = instance.yards
     classes = instance.service_classes
     demands = instance.demands
-    allowed = P.get("allowed_classes", {"express": ["express"], "bulk": list(classes)})
-    dist = instance.shortest_distances()
-    paths = shortest_path_arcs(instance, dist)
-    services = [(i, j, c) for (i, j) in dist for c in classes]
+    svc = {s.key: s for s in instance.services}
+    S = list(svc)
     total = instance.total_demand
-    acc_unit = P["accumulation_cost_per_car_hour"] * P["accumulation_parameter_hours"]
+    group = {d.id: "express" if instance.is_express(d) else "bulk" for d in demands}
+    if yard_capacity is None:
+        yard_capacity = {v: y.reclass_capacity for v, y in yards.items() if y.reclass_capacity is not None}
 
     m = gp.Model("snd")
     m.Params.OutputFlag = int(verbose)
     m.Params.TimeLimit = time_limit
 
-    y = m.addVars(services, vtype=GRB.INTEGER, name="trains")
-    u = m.addVars(services, vtype=GRB.BINARY, name="operated")
+    y = m.addVars(S, vtype=GRB.INTEGER, lb=0, name="trains")  # (8)
     s = m.addVars([d.id for d in demands], vtype=GRB.BINARY, name="accept")
-    # w[k, i, j, c] = 1 if demand k travels on service (i, j, c)
-    w = {
-        (d.id, i, j, c): m.addVar(vtype=GRB.BINARY, name=f"use[{d.id},{i},{j},{c}]")
-        for d in demands
-        for (i, j, c) in services
-        if c in allowed[d.category] and j != d.origin and i != d.destination
+    # (7) x[k, i, j, c] = 1 if demand k is assigned to service (i, j, c)
+    x = {
+        (d.id, *k): m.addVar(vtype=GRB.BINARY, name=f"x[{d.id},{','.join(k)}]")
+        for d in demands for k in S
+        if k[1] != d.origin and k[0] != d.destination
     }
+    out_of = {(d.id, v): [] for d in demands for v in yards}
+    into = {(d.id, v): [] for d in demands for v in yards}
+    for (kid, i, j, c), var in x.items():
+        out_of[kid, i].append(var)
+        into[kid, j].append(var)
 
-    # each accepted demand follows one chain of services from origin to destination
+    # (2) flow balance, (3) one service per leg; an accepted shipment leaves every yard at most once
     for d in demands:
-        for v in instance.yards:
-            out = gp.quicksum(w[d.id, i, j, c] for (i, j, c) in services if i == v and (d.id, i, j, c) in w)
-            inn = gp.quicksum(w[d.id, i, j, c] for (i, j, c) in services if j == v and (d.id, i, j, c) in w)
+        for v in yards:
+            out, inn = gp.quicksum(out_of[d.id, v]), gp.quicksum(into[d.id, v])
             if v == d.origin:
                 m.addConstr(out == s[d.id])
             elif v == d.destination:
@@ -144,64 +138,80 @@ def solve(
                 m.addConstr(out == inn)
                 m.addConstr(out <= 1)
 
-    # train capacity, and a service is "operated" if it runs at least once
-    for (i, j, c) in services:
-        load = gp.quicksum(d.cars * w[d.id, i, j, c] for d in demands if (d.id, i, j, c) in w)
-        m.addConstr(load <= classes[c].max_cars * y[i, j, c])
-        m.addConstr(y[i, j, c] <= math.ceil(total / classes[c].max_cars) * u[i, j, c])
-
-    # line capacity per direction
-    for a in instance.arcs:
-        on_line = [sv for sv in services if (a.tail, a.head) in paths[sv[0], sv[1]]]
-        m.addConstr(gp.quicksum(y[sv] for sv in on_line) <= a.capacity)
-
-    # intree rule: one outgoing service per (yard, destination, category)
-    x = {}
+    # (4) transportation time limit for express goods
+    def time_expr(d):
+        return gp.quicksum(
+            var * (svc[i, j, c].mileage_km / classes[c].speed_kmh
+                   + (yards[i].accumulation_time_h if i == d.origin else yards[i].transfer_time_h) * classes[c].max_cars)
+            for (kid, i, j, c), var in x.items() if kid == d.id
+        )
+    times = {d.id: time_expr(d) for d in demands}
     for d in demands:
-        if rule[d.category] != "intree":
+        if d.time_limit_h is not None and instance.is_express(d):
+            m.addConstr(times[d.id] <= d.time_limit_h, name=f"time[{d.id}]")
+
+    # (6) train capacity
+    load = {k: gp.LinExpr() for k in S}
+    for (kid, i, j, c), var in x.items():
+        load[i, j, c] += next(d.cars for d in demands if d.id == kid) * var
+    for k in S:
+        m.addConstr(load[k] <= classes[k[2]].max_cars * y[k])
+
+    # line capacity, only for services whose path is known
+    for a in instance.arcs:
+        if a.capacity is None:
             continue
-        for (i, j, c) in services:
-            if (d.id, i, j, c) not in w:
-                continue
-            key = (d.category, d.destination, i, j, c)
-            if key not in x:
-                x[key] = m.addVar(vtype=GRB.BINARY, name=f"tree[{','.join(key)}]")
-            m.addConstr(w[d.id, i, j, c] <= x[key])
-    for cat, dest, i in {(k[0], k[1], k[2]) for k in x}:
-        m.addConstr(gp.quicksum(v for k, v in x.items() if k[:3] == (cat, dest, i)) <= 1)
+        on_line = [k for k in S if svc[k].path and (a.tail, a.head) in svc[k].path]
+        if on_line:
+            m.addConstr(gp.quicksum(y[k] for k in on_line) <= a.capacity)
+
+    # (5) blocking rule: intree = one outgoing service per (yard, destination, goods group)
+    tree = {}
+    for (kid, i, j, c), var in x.items():
+        d = next(d for d in demands if d.id == kid)
+        if rule[group[kid]] != "intree":
+            continue
+        key = (group[kid], d.destination, i, j, c)
+        if key not in tree:
+            tree[key] = m.addVar(vtype=GRB.BINARY, name=f"tree[{','.join(key)}]")
+        m.addConstr(var <= tree[key])
+    for g, dest, i in {k[:3] for k in tree}:
+        m.addConstr(gp.quicksum(v for k, v in tree.items() if k[:3] == (g, dest, i)) <= 1)
 
     # cars reclassified per yard = cars arriving at a yard that is not their destination
-    throughput = {
-        v: gp.quicksum(
-            d.cars * w[d.id, i, j, c]
-            for d in demands if d.destination != v
-            for (i, j, c) in services if j == v and (d.id, i, j, c) in w
-        )
-        for v in instance.yards
-    }
+    cars = {d.id: d.cars for d in demands}
+    dest = {d.id: d.destination for d in demands}
+    throughput = {v: gp.LinExpr() for v in yards}
+    for (kid, i, j, c), var in x.items():
+        if j != dest[kid]:
+            throughput[j] += cars[kid] * var
     over = {}
-    if yard_capacity is not None:
-        for v, cap in yard_capacity.items():
-            if elastic:
-                over[v] = m.addVar(lb=0.0, name=f"over[{v}]")
-                m.addConstr(throughput[v] <= cap + over[v])
-            else:
-                m.addConstr(throughput[v] <= cap)
+    for v, cap in yard_capacity.items():
+        if elastic:
+            over[v] = m.addVar(lb=0.0, name=f"over[{v}]")
+            m.addConstr(throughput[v] <= cap + over[v])
+        else:
+            m.addConstr(throughput[v] <= cap)
 
-    served_cars = gp.quicksum(d.cars * s[d.id] for d in demands)
     if eps is not None:
-        m.addConstr(served_cars >= eps * total)
+        m.addConstr(gp.quicksum(d.cars * s[d.id] for d in demands) >= eps * total - 1e-6)
 
+    acc_unit = P.get("accumulation_cost_per_car_hour", 0.0) * P.get("accumulation_parameter_hours", 0.0)
+    u = {}
+    if acc_unit:
+        u = m.addVars(S, vtype=GRB.BINARY, name="operated")
+        for k in S:
+            m.addConstr(y[k] <= math.ceil(total / classes[k[2]].max_cars) * u[k])
+    car_cost = {d.id: instance.categories[d.category].car_cost_per_car_km for d in demands}
     terms = {
         "revenue": gp.quicksum(d.cars * d.revenue_per_car * s[d.id] for d in demands),
-        "train_cost": gp.quicksum(classes[c].train_cost_per_km * dist[i, j] * y[i, j, c] for (i, j, c) in services),
-        "car_haul_cost": gp.quicksum(
-            P["car_cost_per_km"] * dist[i, j] * d.cars * w[d.id, i, j, c]
-            for d in demands for (i, j, c) in services if (d.id, i, j, c) in w
+        "train_cost": gp.quicksum(svc[k].train_cost * y[k] for k in S),
+        "car_cost": gp.quicksum(
+            svc[i, j, c].mileage_km * cars[kid] * car_cost[kid] * var for (kid, i, j, c), var in x.items()
         ),
-        "reclass_cost": P["reclass_cost_per_car"] * gp.quicksum(throughput.values()),
-        "accumulation_cost": gp.quicksum(acc_unit * classes[c].max_cars * u[i, j, c] for (i, j, c) in services),
-        "over_capacity_penalty": P["over_capacity_penalty_per_car"] * gp.quicksum(over.values()),
+        "reclass_cost": P.get("reclass_cost_per_car", 0.0) * gp.quicksum(throughput.values()),
+        "accumulation_cost": gp.quicksum(acc_unit * classes[k[2]].max_cars * u[k] for k in u),
+        "over_capacity_penalty": P.get("over_capacity_penalty_per_car", 0.0) * gp.quicksum(over.values()),
     }
     m.setObjective(terms["revenue"] - gp.quicksum(v for k, v in terms.items() if k != "revenue"), GRB.MAXIMIZE)
     m.optimize()
@@ -214,7 +224,7 @@ def solve(
         route, cur = [], d.origin
         if s[d.id].X > 0.5:
             while cur != d.destination:
-                step = next((i, j, c) for (i, j, c) in services if i == cur and (d.id, i, j, c) in w and w[d.id, i, j, c].X > 0.5)
+                step = next(k for k in S if k[0] == cur and (d.id, *k) in x and x[d.id, *k].X > 0.5)
                 route.append(step)
                 cur = step[1]
         routes[d.id] = route
@@ -230,10 +240,11 @@ def solve(
         total_demand=total,
         runtime_s=m.Runtime,
         mip_gap=m.MIPGap,
-        frequencies={sv: round(y[sv].X) for sv in services if y[sv].X > 0.5},
+        frequencies={k: round(y[k].X) for k in S if y[k].X > 0.5},
         served={d.id: d.cars if s[d.id].X > 0.5 else 0.0 for d in demands},
         routes=routes,
         reclass_yards=reclass,
         yard_throughput={v: val(e) for v, e in throughput.items()},
+        travel_time_h={d.id: val(times[d.id]) for d in demands if routes[d.id]},
         breakdown={k: val(v) for k, v in terms.items()},
     )

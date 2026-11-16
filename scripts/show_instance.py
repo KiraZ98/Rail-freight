@@ -1,6 +1,6 @@
-"""Print a summary of an instance folder, to check it loads and for hand validation.
+"""Print a summary of an instance folder, to check it loads.
 
-    python scripts/show_instance.py data/instances/toy6
+    python scripts/show_instance.py data/instances/xin2022_example
 """
 import sys
 from pathlib import Path
@@ -11,28 +11,29 @@ from snd import load_instance  # noqa: E402
 
 
 def main() -> None:
-    folder = sys.argv[1] if len(sys.argv) > 1 else "data/instances/toy6"
+    folder = sys.argv[1] if len(sys.argv) > 1 else "data/instances/xin2022_example"
     inst = load_instance(folder)
-    dist = inst.shortest_distances()
+    print(f"Instance {inst.name}: {len(inst.yards)} yards, {len(inst.arcs) // 2} lines, "
+          f"{len(inst.services)} candidate services, {len(inst.demands)} demands")
 
-    print(f"Instance {inst.name}: {len(inst.yards)} yards, {len(inst.arcs) // 2} lines, {len(inst.demands)} demands")
-    print("\nYards (reclassification cars/day, classification tracks)")
+    print("\nYards (reclassification cars/day, tracks, accumulation h, transfer h)")
     for y in inst.yards.values():
-        print(f"  {y.id}  {y.reclass_capacity:6.0f}  {y.tracks:3d}")
+        cap = "-" if y.reclass_capacity is None else f"{y.reclass_capacity:g}"
+        tracks = "-" if y.tracks is None else str(y.tracks)
+        print(f"  {y.id:<4}{cap:>8}{tracks:>6}{y.accumulation_time_h:8.2f}{y.transfer_time_h:8.2f}")
 
-    print("\nShortest distances (km)")
-    ids = list(inst.yards)
-    print("     " + "".join(f"{j:>6}" for j in ids))
-    for i in ids:
-        print(f"  {i:<3}" + "".join(f"{dist.get((i, j), 0):6.0f}" for j in ids))
+    print("\nGoods categories (express, car cost per car-km)")
+    for c in inst.categories.values():
+        print(f"  {c.id:<12}{'yes' if c.express else 'no':<5}{c.car_cost_per_car_km:g}")
+
+    print("\nService classes (km/h, cars per train)")
+    for c in inst.service_classes.values():
+        print(f"  {c.id:<5}{c.speed_kmh:6g}{c.max_cars:5d}")
 
     print("\nDemands")
     for d in inst.demands:
-        km = dist[d.origin, d.destination]
-        print(f"  {d.id}  {d.origin}->{d.destination}  {d.category:<7} {d.cars:5.0f} cars/day  {km:4.0f} km  revenue {d.revenue_per_car:6.0f}/car")
-    for cat in ("express", "bulk"):
-        print(f"  total {cat}: {sum(d.cars for d in inst.demands if d.category == cat):.0f} cars/day")
-    print(f"  maximum revenue if everything is served: {sum(d.cars * d.revenue_per_car for d in inst.demands):,.0f} per day")
+        limit = "-" if d.time_limit_h is None else f"{d.time_limit_h:g} h"
+        print(f"  {d.id:<4}{d.origin}->{d.destination}  {d.category:<11}{d.cars:6g} cars/day  limit {limit}")
 
 
 if __name__ == "__main__":
