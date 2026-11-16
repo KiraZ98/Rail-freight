@@ -7,27 +7,57 @@ AMORE project, TU Dresden, winter term 2026/27. Base paper: Xin, Wu & Wang (2025
 folder has a `SOURCES.md` that names the paper table or document behind every file.
 A value without a source is left blank, not guessed.
 
-## Layout
+## Files
 
-| Path | Content |
+| File | What it does |
 |---|---|
-| `data/instances/xin2022_example/` | Published 5-station example of Xin (2022), Tables 4–8 |
-| `data/german/` | German yard data (Bundestag Drucksache 19/26856), capacity assumptions, distance script |
-| `src/snd/instance.py` | Instance format and loader |
-| `src/snd/model.py` | MILP: `solve()` and `Solution` |
-| `scripts/show_instance.py` | Prints an instance summary |
-| `scripts/run_instance.py` | Solves an instance under the three policies |
-| `tests/test_model.py` | Reproduces the published result and checks the model |
+| `read_data.py` | Step 1: reads the CSV files of an instance into one dictionary |
+| `model.py` | Step 2: builds the Gurobi model and solves it |
+| `main.py` | Step 3: runs the model for the three policies and prints the results |
+| `test_model.py` | Checks that the model reproduces the published result |
+| `data/instances/xin2022_example/` | Published 5-station example of Xin (2022), Tables 4-8 |
+| `data/german/` | German yard data (Bundestag Drucksache 19/26856) and distance script |
 | `results/` | Run outputs (not tracked by git) |
 
-## Quick start
+## How to run
 
 ```bash
 pip install -r requirements.txt
-python scripts/show_instance.py data/instances/xin2022_example
-python scripts/run_instance.py data/instances/xin2022_example 1.0
-python tests/test_model.py
+python main.py
+python test_model.py
 ```
+
+The instance folder and `EPS` are set at the top of `main.py`.
+
+## How to use the model in your own script
+
+```python
+from read_data import read_data
+from model import solve
+
+data = read_data("data/instances/xin2022_example")
+result = solve(data, policy="mixed", eps=1.0)
+print(result["total_cost"], result["trains"], result["routes"])
+```
+
+`solve` options:
+
+| Option | Meaning |
+|---|---|
+| `policy` | `"mixed"` (express inseparable, non-express intree), `"intree"` or `"inseparable"` |
+| `eps` | Share of demand that must be served; `1.0` = all demand, as in Xin (2022) |
+| `yard_capacity` | `{station: cars per day}`; default is the capacity column of `nodes.csv` |
+| `penalty` | If given, yard capacity is elastic with this cost per car above the limit (Lin et al. 2021 use 1500) |
+| `time_limit` | Gurobi time limit in seconds |
+
+## The model
+
+Equations (1)-(8) of Xin (2022): train cost per train, car cost per car-km, flow balance,
+nonseparable shipments, time limit for express goods, intree rule, train capacity.
+The equation numbers are written next to each constraint in `model.py`.
+
+Our extensions, marked `EXTENSION` in the code: accepting or rejecting demand with revenue,
+the eps-constraint on demand served, and yard reclassification capacity (hard or elastic).
 
 ## Validation
 
@@ -35,25 +65,19 @@ The model reproduces the published optimum of Xin (2022): 23,000 CNY with servic
 (1, 2, C5) x 4, (1, 4, C5) x 1 and (1, 5, C2) x 1 (Table 9). `SOURCES.md` in the
 example folder explains the one inconsistency in the paper (Table 10 lists C1).
 
-## Model
+## Data format
 
-Equations (1)–(8) of Xin (2022): train cost per train, car cost per car-km, flow balance,
-nonseparable shipments, time limit for express goods, train capacity. The tree-shaped path
-rule (eq. 5) is implemented as the intree blocking rule.
+One folder per instance:
 
-Optional extensions, switched off when their data are not given: revenue with demand
-rejection and the eps-constraint, yard reclassification capacity (hard or elastic, Lin et
-al. 2021), line capacity, reclassification and accumulation cost.
+| File | Columns |
+|---|---|
+| `nodes.csv` | id, name, reclass_capacity_cars_per_day, classification_tracks, accumulation_time_h, transfer_time_h |
+| `categories.csv` | id, express (yes/no), car_cost_per_car_km |
+| `demands.csv` | id, origin, destination, category, cars_per_day, revenue_per_car, time_limit_h |
+| `service_classes.csv` | id, speed_kmh, max_cars |
+| `services.csv` | origin, destination, class, mileage_km, train_cost |
 
-`policy` is `"mixed"` (express inseparable, non-express intree), `"intree"` or
-`"inseparable"`. In this model inseparable <= mixed <= intree in cost, because each is a
-relaxation of the next.
-
-## Instance format
-
-Column names are documented at the top of `src/snd/instance.py`. Candidate services come
-from `services.csv` (origin, destination, class, mileage, cost per train) when it exists,
-as in Xin (2022); otherwise they are generated on shortest paths from `arcs.csv`.
+A blank cell means the source gives no value.
 
 ## Still without a source
 
