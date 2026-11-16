@@ -1,7 +1,7 @@
 """Step 1: read the CSV files of one instance folder.
 
 The result is one dictionary with the sets and parameters of the model.
-The names follow Tables 1 and 2 of Xin (2022).
+The names follow Tables 1-3 of Xin, Wu & Wang (2025).
 """
 import pandas as pd
 
@@ -20,13 +20,15 @@ def read_data(folder):
     data["stations"] = list(nodes["id"])
     data["acc_time"] = dict(zip(nodes["id"], nodes["accumulation_time_h"]))   # tau_AC, hours
     data["transfer_time"] = dict(zip(nodes["id"], nodes["transfer_time_h"]))  # tau_TF, hours
-    # yard capacity (cars reclassified per day), only for the stations where it is given
-    with_capacity = nodes.dropna(subset=["reclass_capacity_cars_per_day"])
-    data["yard_capacity"] = dict(zip(with_capacity["id"], with_capacity["reclass_capacity_cars_per_day"]))
+    # station capacities in cars per day, only for the stations where they are given
+    given = nodes.dropna(subset=["classification_capacity"])
+    data["classification_capacity"] = dict(zip(given["id"], given["classification_capacity"]))  # Capa_in
+    given = nodes.dropna(subset=["sorting_capacity"])
+    data["sorting_capacity"] = dict(zip(given["id"], given["sorting_capacity"]))                # Capa_out
 
     # ---- goods categories (set P) ----
     data["express"] = dict(zip(categories["id"], categories["express"] == "yes"))
-    data["car_cost"] = dict(zip(categories["id"], categories["car_cost_per_car_km"]))  # per car-km
+    data["car_cost"] = dict(zip(categories["id"], categories["car_cost_per_car_km"]))  # c_car, per car-km
 
     # ---- train service classes (set C) ----
     data["classes"] = list(classes["id"])
@@ -37,6 +39,8 @@ def read_data(folder):
     data["services"] = list(zip(services["origin"], services["destination"], services["class"]))
     data["mileage"] = dict(zip(data["services"], services["mileage_km"]))     # l_ijc, km
     data["train_cost"] = dict(zip(data["services"], services["train_cost"]))  # c_train, per train
+    # maximal frequency in trains per day, only for the services where it is given
+    data["max_frequency"] = {s: b for s, b in zip(data["services"], services["max_frequency"]) if pd.notna(b)}  # beta
 
     # ---- demands (set D) ----
     data["demands"] = list(demands["id"])
@@ -44,10 +48,10 @@ def read_data(folder):
     data["destination"] = dict(zip(demands["id"], demands["destination"]))
     data["category"] = dict(zip(demands["id"], demands["category"]))
     data["volume"] = dict(zip(demands["id"], demands["cars_per_day"]))  # n_odp, cars per day
-    # revenue per car: 0 when the source gives none
-    data["revenue"] = dict(zip(demands["id"], demands["revenue_per_car"].fillna(0)))
+    # revenue for transporting the whole demand (r_odp): 0 when the source gives none
+    data["revenue"] = dict(zip(demands["id"], demands["revenue"].fillna(0)))
     # time limit in hours, only for the demands that have one
-    with_limit = demands.dropna(subset=["time_limit_h"])
-    data["time_limit"] = dict(zip(with_limit["id"], with_limit["time_limit_h"]))
+    given = demands.dropna(subset=["time_limit_h"])
+    data["time_limit"] = dict(zip(given["id"], given["time_limit_h"]))  # tau_LM
 
     return data
