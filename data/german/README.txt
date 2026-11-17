@@ -5,10 +5,12 @@ AMORE_network_data.xlsx
   Yards        28 German classification yards with track counts and occupancy
                (Bundestag Drucksache 19/26856, 2021). Top 20 by tracks are marked
                as the model network. Daily capacity = tracks x throughput per track.
-  Assumptions  All parameters in one place (blue/yellow cells = edit here):
-               200 cars per track (track limit, Xiao et al. 2020 / Lin, Wang & Zhao 2021),
-               ~105 cars per track per day (calibrated on Maschen: 11,000 wagons/day
-               design capacity / 105 tracks), 45 t per wagon (our assumption), etc.
+  Assumptions  All parameters in one place (blue/yellow cells = edit here), each with its source:
+               200 cars per track (track limit per destination block, Xiao et al. 2020;
+               Lin, Wang & Zhao 2021), ~76 cars per track per day (Maschen: 2 systems x
+               ~4,000 wagons/day, dpa/heise 2020, / 105 tracks), 50 t net per wagon
+               (EU Study on Single Wagonload Traffic 2015, reference wagon). The detour
+               factor has no source and is only used for quick tests.
   Demand       Template for the Destatis table 46131 (rail freight by origin x
                destination traffic district). Converts tonnes/year to wagons/day.
   Sources & status   What is done and what is still to do.

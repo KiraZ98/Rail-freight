@@ -8,8 +8,12 @@ What it does
   3. Downloads the German railway network from OpenStreetMap with OSMnx
      (lecture 4, slides 26-27) and computes the shortest RAIL distance
      between every pair of model yards with NetworkX.
-  4. If the rail download fails, it falls back to straight-line distance
-     x detour factor (Assumptions sheet) and says so in the output.
+  4. Yard pairs that are not connected in the rail graph get the straight-line distance
+     x the median ratio (rail km / straight-line km) of the pairs that are connected,
+     so the factor comes from the data itself.
+  5. Only if the rail download fails completely (or with --fallback) does it use the
+     detour factor from the Assumptions sheet. That factor has no source: use those
+     distances for quick tests only, not for results in the report.
 
 Output
   yard_coordinates.csv       one row per yard with lat/lon
@@ -20,7 +24,7 @@ How to run (on your own laptop, internet needed)
   pip install osmnx networkx pandas openpyxl scikit-learn
   python build_distances.py              # model yards only (column "In model network?" = 1)
   python build_distances.py --all        # all 28 yards
-  python build_distances.py --fallback   # skip the rail download (fast, approximate)
+  python build_distances.py --fallback   # skip the rail download (fast, quick tests only)
 
 Notes
   - The Germany-wide rail download is large: expect 10-30 minutes and a few GB of RAM
@@ -90,6 +94,20 @@ def fallback_matrix(yards, detour):
     return m
 
 
+def median_ratio(m, yards):
+    """Median of rail km / straight-line km over the yard pairs connected in the rail graph."""
+    ratios = []
+    for i, a in yards.iterrows():
+        for j, b in yards.iterrows():
+            if i != j and pd.notna(m.iloc[i, j]):
+                straight = haversine_km(a.Latitude, a.Longitude, b.Latitude, b.Longitude)
+                if straight > 0:
+                    ratios.append(m.iloc[i, j] / straight)
+    ratios.sort()
+    n = len(ratios)
+    return (ratios[n // 2] + ratios[(n - 1) // 2]) / 2, n
+
+
 def rail_matrix(yards):
     import networkx as nx
     import osmnx as ox
@@ -128,21 +146,25 @@ def main():
     if yards[["Latitude", "Longitude"]].isna().any().any():
         sys.exit("Some yards have no coordinates - fill them in the Yards sheet and run again.")
 
-    method = f"straight-line distance x detour factor {detour}"
+    method = (f"straight-line distance x detour factor {detour} from the Assumptions sheet "
+              "(no source: quick tests only, not for results in the report)")
     if args.fallback:
         m = fallback_matrix(yards, detour)
     else:
         try:
             m = rail_matrix(yards)
-            if m.isna().any().any():
-                print("  some pairs are not connected in the rail graph -> filled with fallback values")
-                fb = fallback_matrix(yards, detour)
-                m = m.fillna(fb)
-                method = "OSM rail graph (shortest path), gaps filled with straight-line x detour"
+            gaps = int(m.isna().sum().sum())
+            if gaps:
+                ratio, n_pairs = median_ratio(m, yards)
+                print(f"  {gaps} pairs are not connected in the rail graph -> straight-line x {ratio:.3f} "
+                      f"(median rail/straight-line ratio of {n_pairs} connected pairs)")
+                m = m.fillna(fallback_matrix(yards, ratio))
+                method = (f"OSM rail graph (shortest path); {gaps} unconnected pairs filled with straight-line x "
+                          f"{ratio:.3f}, the median rail/straight-line ratio of the {n_pairs} connected pairs")
             else:
                 method = "OSM rail graph (shortest path along main-line track)"
         except Exception as e:
-            print(f"  rail download failed ({e}); using fallback")
+            print(f"  rail download failed ({e}); using the unsourced detour factor - quick tests only")
             m = fallback_matrix(yards, detour)
 
     m.to_csv("distance_matrix_km.csv")
