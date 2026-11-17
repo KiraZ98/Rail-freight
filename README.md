@@ -54,7 +54,7 @@ print(result["profit"], result["accepted"], result["routes"])
 | `policy` | `"mixed"` (express inseparable, non-express intree), `"intree"` or `"inseparable"` |
 | `eps` | Share of demand (in cars) that must be served; `None` = the model decides |
 | `capacity_factor` | Multiplies the classification and sorting capacity of every station (`0.8` = 80 %) |
-| `penalty` | If given, station capacity is elastic with this cost per car above the limit (Lin et al. 2021 use 1500) |
+| `penalty` | If given, station capacity is elastic with this cost per car above the limit (Lin, Wang & Zhao 2021 use 1500) |
 | `integer_trains` | `False` = fractional trains per day as in the base paper; `True` = whole trains as in Xin (2022) |
 | `time_limit` | Gurobi time limit in seconds |
 
@@ -135,6 +135,9 @@ Profit advantage of the mixed policy over the intree policy, mean of the six ins
 - **Capacity has no clear effect:** at base demand the advantage shrinks as capacity tightens;
   at higher demand it moves little and not in one direction. It differs a lot by instance:
   from 0 % in two of the six instances to over 20 % in two others at +50 % demand.
+- Share of the inseparable policy's advantage over intree that mixed captures (pooled over
+  the six instances): 79 % at base demand and published capacities, falling to 46 % at 60 %
+  capacity; at +50 % demand it rises from 57 % to 77 % as capacity tightens.
 - The inseparable policy stays ahead of mixed (on average 1.9 % at base demand and 8.8 % at
   +50 % with published capacities), and that gap narrows as capacity tightens.
 - Reclassifications per served car fall mildly as capacity tightens (mean 0.55 to 0.46 at
@@ -184,7 +187,7 @@ A blank cell means the source gives no value.
 | Greedy heuristic for the second stage (RQ2) | Base paper, Algorithm 2 |
 | Larger random instances for RQ2 (more stations) | `generate_instance.py`, change `N_STATIONS` and `SIZES` |
 | RQ1 grid on the German network | `rq1_experiments.py`, add it to `INSTANCES` |
-| Track limit per yard (one track per 200 cars) | Lin et al. (2021), constraint (14) |
+| Track limit per yard (one track per 200 cars, counted per destination block) | Xiao et al. (2020), constraints (8)-(9); Lin, Wang & Zhao (2021), constraint (14) |
 | German network: costs and revenues | Base paper formulas (48)-(49) applied to German distances; DB InfraGO track access charges |
 | German network: demand | Destatis GENESIS 46131 |
 

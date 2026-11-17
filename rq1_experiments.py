@@ -172,6 +172,17 @@ def print_summary(runs):
         print("Profit of the mixed policy compared with the " + other + " policy (%)")
         print(scenario_table(100 * (profit["mixed"] - profit[other]) / profit[other]).round(1).to_string())
 
+    # Share of the inseparable policy's advantage over intree that the mixed policy keeps,
+    # pooled over the instances (instances where all three policies earn the same add nothing).
+    levels = ["demand_growth", "capacity_level"]
+    gain = (profit["mixed"] - profit["intree"]).groupby(level=levels, sort=False).sum()
+    gap = (profit["inseparable"] - profit["intree"]).groupby(level=levels, sort=False).sum()
+    share = 100 * gain / gap.where(gap > 1)
+    share = share.reindex([(g, c) for g in DEMAND_GROWTH for c in CAPACITY_LEVELS])
+    print()
+    print("Share of the inseparable advantage over intree that the mixed policy captures (%, pooled over instances)")
+    print(share.round(1).to_string())
+
     for column, title in [("service_level", "Share of demand served, mixed policy"),
                           ("reclass_per_car", "Reclassifications per served car, mixed policy")]:
         mixed = runs[runs["policy"] == "mixed"].set_index(index)[column]

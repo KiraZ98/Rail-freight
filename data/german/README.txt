@@ -6,7 +6,7 @@ AMORE_network_data.xlsx
                (Bundestag Drucksache 19/26856, 2021). Top 20 by tracks are marked
                as the model network. Daily capacity = tracks x throughput per track.
   Assumptions  All parameters in one place (blue/yellow cells = edit here):
-               200 cars per track (track limit, Xiao et al. 2020 / Lin 2021),
+               200 cars per track (track limit, Xiao et al. 2020 / Lin, Wang & Zhao 2021),
                ~105 cars per track per day (calibrated on Maschen: 11,000 wagons/day
                design capacity / 105 tracks), 45 t per wagon (our assumption), etc.
   Demand       Template for the Destatis table 46131 (rail freight by origin x
