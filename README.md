@@ -23,7 +23,7 @@ A value without a source is left blank, not guessed.
 | `data/instances/xin2022_example/` | 5-station example of Xin (2022), Tables 4-8 |
 | `data/instances/random_V10_S80_D40_seed1..5/` | Five random instances: 10 stations, 80 services, 40 demands |
 | `data/german/` | German yard data (Bundestag Drucksache 19/26856) and distance script |
-| `results/` | Run outputs (not tracked by git) |
+| `results/` | Run outputs: `rq1_runs.csv` (fractional trains), `rq1_runs_integer.csv` (whole trains) and the RQ1 figures |
 
 ## How to run
 

@@ -7,5 +7,3 @@ __pycache__/
 *.ilp
 *.sol
 gurobi.log
-results/*
-!results/.gitkeep
