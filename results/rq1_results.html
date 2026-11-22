@@ -1,0 +1,105 @@
+<!DOCTYPE html><html lang="zh"><head><meta charset="utf-8">
+<title>RQ1 结果</title><style>
+body{font-family:-apple-system,"PingFang SC",sans-serif;max-width:720px;margin:44px auto;
+padding:0 20px;color:#2C2C2A;line-height:1.75;font-size:14px}
+h1{font-size:19px;font-weight:500;margin:0 0 4px}
+h2{font-size:15px;font-weight:500;margin:34px 0 8px}
+p{margin:8px 0} .sub{color:#5F5E5A;font-size:13px}
+table{border-collapse:collapse;width:100%;margin:10px 0;font-size:13px}
+th{text-align:left;font-weight:500;padding:7px 9px;border-bottom:1.5px solid #D3D1C7;
+background:#F7F6F2}
+td{padding:6px 9px;border-bottom:1px solid #EDEBE4}
+.n{text-align:right;font-variant-numeric:tabular-nums}
+.key{background:#FAEEDA;border-left:3px solid #BA7517;padding:12px 16px;
+margin:20px 0;border-radius:0 6px 6px 0}
+ol{padding-left:20px} li{margin:7px 0}
+</style></head><body>
+
+<h1>RQ1　编组站容量、集结政策与路径选择</h1>
+<p class="sub">9 个德国编组站 · 45 个需求 · 3,295 车/天 ·
+3 档服务等级（160/120/80 km/h）· 3 档容量</p>
+
+<div class="key">
+<b>结论：</b>容量收紧是靠<b>少接货</b>吸收的，路线几乎不变；
+需求增长才是把改编挤掉的力。混合政策能保住 94%–99% 的利润和 96%–100% 的需求，
+但容量越紧，混合与单政策的差别越小。
+</div>
+
+<h2>表 1　容量收紧后，路径怎么变</h2>
+<p class="sub">基准需求，混合政策。θ 为容量缩放系数；基准容量按无容量约束解的名义 60% 利用率标定（站场容量为合成数据）。</p>
+<table>
+<tr><th>容量</th><th class="n">利润</th><th class="n">接受需求</th>
+<th class="n">载车</th><th class="n">多腿需求</th><th class="n">改编车次</th>
+<th class="n">直达比例</th></tr>
+<tr><td>100%</td><td class='n'>105,097</td><td class='n'>27</td><td class='n'>1,862</td><td class='n'>2</td><td class='n'>129</td><td class='n'>93.1%</td></tr><tr><td>80%</td><td class='n'>102,652</td><td class='n'>24</td><td class='n'>1,686</td><td class='n'>2</td><td class='n'>129</td><td class='n'>92.3%</td></tr><tr><td>60%</td><td class='n'>98,485</td><td class='n'>21</td><td class='n'>1,443</td><td class='n'>2</td><td class='n'>129</td><td class='n'>91.1%</td></tr>
+</table>
+
+<h2>表 2　混合政策 vs 单政策：利润和需求各保留多少</h2>
+<p class="sub">基准需求。括号内是接受的需求个数；最后一列 = 混合 ÷ 只放开集结。</p>
+<table>
+<tr><th>容量</th><th class="n">只放开集结<br><span class="sub">最松的单政策</span></th>
+<th class="n">混合</th><th class="n">只 intree<br><span class="sub">最紧的单政策</span></th>
+<th class="n">混合保留率<br><span class="sub">利润 / 需求</span></th></tr>
+<tr><td>100%</td><td class='n'>111,653<span class='sub'>（28）</span></td><td class='n'>105,097<span class='sub'>（27）</span></td><td class='n'>104,214<span class='sub'>（27）</span></td><td class='n'>94.1% / 96.4%</td></tr><tr><td>80%</td><td class='n'>109,208<span class='sub'>（25）</span></td><td class='n'>102,652<span class='sub'>（24）</span></td><td class='n'>102,595<span class='sub'>（24）</span></td><td class='n'>94.0% / 96.0%</td></tr><tr><td>60%</td><td class='n'>99,837<span class='sub'>（21）</span></td><td class='n'>98,485<span class='sub'>（21）</span></td><td class='n'>98,485<span class='sub'>（21）</span></td><td class='n'>98.6% / 100.0%</td></tr>
+</table>
+
+<h2>表 3　需求增长（容量固定在 100%，混合政策）</h2>
+<p class="sub">+50% 对应欧盟 2030 目标。</p>
+<table>
+<tr><th>需求</th><th class="n">利润</th><th class="n">接受需求</th>
+<th class="n">每车改编次数</th><th class="n">直达比例</th></tr>
+<tr><td>1×</td><td class='n'>105,097</td><td class='n'>27</td><td class='n'>0.069</td><td class='n'>93.1%</td></tr><tr><td>1.25×</td><td class='n'>121,547</td><td class='n'>24</td><td class='n'>0.000</td><td class='n'>100.0%</td></tr><tr><td>1.5×</td><td class='n'>95,141</td><td class='n'>20</td><td class='n'>0.000</td><td class='n'>100.0%</td></tr>
+</table>
+
+<h2>三句话</h2>
+<ol>
+<li><b>容量收紧不改变路径，只改变接多少货。</b>容量从 100% 压到 60%，
+载车从 1,862 降到 1,443
+（-23%），
+可接需求 27 → 21 个，
+利润 105,097 → 98,485。
+但多腿需求始终是 2 个、改编车次始终是
+129，直达比例 93% →
+91% 基本不动。<br>
+<span class="sub">为什么改路线没用：约束 (6)(7) 只数"进站/出站车数"，一票货无论怎么绕都要从起点
+出站、到终点进站，这两笔占用完全相同——改路线只能给中间站加负担，不能减轻起终点。
+所以模型唯一的出路是拒货。θ=60% 时打满的是 Wanne-Eickel 和 Nürnberg，
+被拒的 6 票货里有 3 票正是从这两个站出发。</span><br>
+<span class="sub">注意：若按"每车改编次数"看，数值会从
+0.069 升到 0.089，
+但这纯粹是分母（载车）缩小的结果，绝对量没变，不能读成"改编变多"。</span></li>
+<li><b>混合政策保住了大部分利润和需求，但容量一紧就无所谓了。</b>
+相对最松的单政策（只放开集结），混合在容量 100% 时保留
+94.1% 的利润、
+96.4% 的需求
+（少 6,555 利润、1 票货）；压到 60% 时反而保留
+98.6% 的利润、
+100.0% 的需求
+（少 1,352 利润、0 票货）。
+相对最紧的单政策（只 intree），混合只多
+883 →
+58 →
+0。
+所以容量越紧，选哪种集结政策越不重要——这与 proposal
+"混合政策的优势应随容量收紧而扩大"的预期相反。</li>
+<li><b>需求增长反而让改编彻底消失。</b>需求 1.25 倍时每车改编次数从
+0.069 掉到 0，直达比例 100%，
+全部货物走直通。但需求 1.5 倍时利润反降到 95,141
+（低于基准的 105,097）——容量没跟着长，
+新增的货只能被拒。这就是 proposal 里"流量转向直通列车"和"容量成为瓶颈"
+两件事同时发生的场景。</li>
+</ol>
+
+<h2>数据说明</h2>
+<ol>
+<li><b>真实：</b>9 个编组站的名称、经纬度、90–120 km/h 速度、700 m 编挂标准。</li>
+<li><b>合成：</b>45 个需求、货类成本与收入、各站容量（按无约束流量的 60% 标定）、
+线路频率上限。距离用大圆 × 1.25 近似。</li>
+<li><b>因此：</b>结果应理解为容量收紧的<b>相对敏感性</b>，不是德国铁路的绝对运量预测。</li>
+<li><b>一个额外发现：</b>Express 等级（160 km/h）在所有算例里从未被选中。
+4 个快运需求里只有 2 个被接受，都用 Fast（120 km/h）运送——120 已经能在时限内到达，
+且便宜 10%。这与德国现实一致：DB Cargo 没有 160 km/h 的货运产品。
+如果坚持保留三档速度，需要把快运时限再压紧，否则第三档是空的。</li>
+</ol>
+
+</body></html>
