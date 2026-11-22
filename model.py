@@ -6,6 +6,7 @@ Our additions are marked with "EXTENSION".
 """
 import gurobipy as gp
 from gurobipy import GRB
+import math
 
 # Blocking rule used for express and for non-express goods under each policy.
 # "mixed" is the paper's model; the two single policies are its Section 6.3.3.
@@ -17,7 +18,8 @@ POLICIES = {
 
 
 def solve(data, policy="mixed", eps=None, capacity_factor=1.0, penalty=None,
-          integer_trains=False, time_limit=3600, verbose=False):
+          integer_trains=False, time_limit=3600, verbose=False,
+          track_limit=False, cars_per_track=200, mip_gap=1e-4):
     """Solve the model and return the results as a dictionary.
 
     policy           "mixed", "intree" or "inseparable"
@@ -29,6 +31,9 @@ def solve(data, policy="mixed", eps=None, capacity_factor=1.0, penalty=None,
     integer_trains   False = fractional trains per day as in Xin, Wu & Wang (2025);
                      True = whole trains as in Xin (2022)
     time_limit       Gurobi time limit in seconds
+    track_limit      EXTENSION: hard limit on the sorting tracks per station
+                     (Xiao et al. 2020, constraints (8)-(10))
+    cars_per_track   cars one track can hold (200 in Xiao et al. 2020)
     """
     # ------------------------------------------------------------------
     # Sets and parameters
@@ -71,6 +76,8 @@ def solve(data, policy="mixed", eps=None, capacity_factor=1.0, penalty=None,
     m = gp.Model("service_network_design")
     m.Params.OutputFlag = 1 if verbose else 0
     m.Params.TimeLimit = time_limit
+    m.Params.TimeLimit = time_limit
+    m.Params.MIPGap = mip_gap
 
     x = m.addVars(D, S, vtype=GRB.BINARY, name="x")  # (10) x[k,i,j,c] = 1 if demand k uses service (i,j,c)
     y = m.addVars(D, vtype=GRB.BINARY, name="y")     # (11) y[k] = 1 if demand k is accepted
@@ -137,10 +144,23 @@ def solve(data, policy="mixed", eps=None, capacity_factor=1.0, penalty=None,
         if v in sorting_capacity:
             m.addConstr(sorted_cars[v] <= capacity_factor * sorting_capacity[v] + over_out[v])
 
+    # Cars on each service: left-hand side of (8) and g_ij of Xiao et al. (2020), (10)
+    cars_on_service = {(i, j, c): gp.quicksum(volume[k] * x[k, i, j, c] for k in D) for (i, j, c) in S}
+
     # (8) Train capacity: the cars on a service must fit into its trains.
     for (i, j, c) in S:
-        cars_on_service = gp.quicksum(volume[k] * x[k, i, j, c] for k in D)
-        m.addConstr(cars_on_service <= train_size[c] * f[i, j, c])
+        m.addConstr(cars_on_service[i, j, c] <= train_size[c] * f[i, j, c])
+
+    # EXTENSION: track limit per station, hard (Xiao et al. 2020, constraints (8)-(10)).
+    if track_limit and not data.get("tracks"):
+        raise ValueError("track_limit=True, but the instance has no track counts")
+    track_stations = [v for v in V if v in data.get("tracks", {})] if track_limit else []
+    blocks = [s for s in S if s[0] in track_stations]
+    tracks = m.addVars(blocks, lb=0, vtype=GRB.INTEGER, name="tracks")
+    for s in blocks:
+        m.addConstr(cars_per_track * tracks[s] >= cars_on_service[s])        # (9), (10)
+    for v in track_stations:
+        m.addConstr(tracks.sum(v, "*", "*") <= data["tracks"][v])           # (8)
 
     # (9) Maximal frequency of each service.
     for s in S:
@@ -191,12 +211,16 @@ def solve(data, policy="mixed", eps=None, capacity_factor=1.0, penalty=None,
         "total_demand": total_demand,
         "runtime": m.Runtime,
         "gap": m.MIPGap if m.IsMIP else 0.0,
+        "bound": m.ObjBound if m.IsMIP else m.ObjVal,  # best upper bound on the profit
         "trains": {s: round(f[s].X, 6) for s in S if f[s].X > 1e-6},
         "routes": routes,
         "travel_time": {k: hours[k].getValue() for k in D if routes[k]},
         "classified": {v: classified[v].getValue() for v in V},
         "sorted": {v: sorted_cars[v].getValue() for v in V},
         "reclassified": {v: reclassified[v].getValue() for v in V},
+        # EXTENSION: the number of tracks used at each station, may be smaller than the limit
+        "tracks_used": {v: sum(math.ceil(round(cars_on_service[s].getValue(), 6) / cars_per_track)
+                               for s in S if s[0] == v) for v in V},
     }
     result["total_cost"] = result["train_cost"] + result["car_cost"] + result["penalty"]
     return result

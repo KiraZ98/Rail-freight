@@ -14,6 +14,7 @@ import pandas as pd
 
 from model import solve
 from read_data import read_data
+import math
 
 # ---- settings ----
 DATA = Path(__file__).parent / "data" / "instances"
@@ -28,6 +29,12 @@ CAPACITY_REFERENCE = "peak"                     # "peak" or "station", see set_c
 INTEGER_TRAINS = False                          # False = fractional trains as in the base paper
 TIME_LIMIT = 600                                # seconds per run
 
+TRACK_LIMIT = True          # EXTENSION: hard track limit per station (Xiao et al. 2020)
+TRACKS_SOURCE = "capacity"   # "data": column tracks of nodes.csv (German network)
+                             # "capacity": classification capacity / CARS_PER_TRACK_DAY
+CARS_PER_TRACK_DAY = 76      # Maschen, ~76 cars per track per day (team data sheet: dpa/heise 2020)
+# Suffix for result files, so runs with different settings never overwrite each other
+SUFFIX = ("_integer" if INTEGER_TRAINS else "") + ("_tracks" if TRACK_LIMIT else "")
 
 # ----------------------------------------------------------------------
 # Scenarios
@@ -85,6 +92,15 @@ def set_capacity(data, reference, level):
             new["sorting_capacity"][v] = level * reference["sorted"][v]
     return new
 
+# EXTENSION: track limit
+def set_tracks(data):
+    """Return a copy of the data with the track count of every station (used if TRACK_LIMIT)."""
+    new = copy.deepcopy(data)
+    if TRACKS_SOURCE == "capacity":
+        new["tracks"] = {v: math.floor(data["classification_capacity"][v] / CARS_PER_TRACK_DAY)
+                         for v in data["stations"] if v in data["classification_capacity"]}
+    return new
+
 
 # ----------------------------------------------------------------------
 # Metrics of one run
@@ -106,6 +122,10 @@ def metrics(data, result):
         utilisation.append(result["classified"][v] / data["classification_capacity"][v])
         utilisation.append(result["sorted"][v] / data["sorting_capacity"][v])
 
+    # EXTENSION: track use = tracks needed / tracks available
+    track_use = [result["tracks_used"][v] / data["tracks"][v]
+                 for v in data.get("tracks", {}) if data["tracks"][v] > 0]
+
     return {
         "status": result["status"],
         "profit": result["profit"],
@@ -125,6 +145,10 @@ def metrics(data, result):
         "limits_reached": sum(1 for u in utilisation if u > 0.999),
         "runtime_s": result["runtime"],
         "gap": result["gap"],
+        #EXTENSION: track use metrics
+        "peak_track_utilisation": max(track_use) if track_use else 0,
+        "track_limits_reached": sum(1 for v in data.get("tracks", {})
+                                    if result["tracks_used"][v] >= data["tracks"][v]),
     }
 
 
@@ -140,8 +164,11 @@ def run_grid(instance):
         demand_data = add_demand_growth(base, growth)
         for level in CAPACITY_LEVELS:
             scenario = set_capacity(demand_data, reference, level)
+            if TRACK_LIMIT:
+                scenario = set_tracks(scenario)
             for policy in POLICIES:
-                result = solve(scenario, policy=policy, integer_trains=INTEGER_TRAINS, time_limit=TIME_LIMIT)
+                result = solve(scenario, policy=policy, integer_trains=INTEGER_TRAINS, 
+                               time_limit=TIME_LIMIT, track_limit=TRACK_LIMIT)
                 row = {"instance": instance, "demand_growth": growth, "capacity_level": level, "policy": policy}
                 row.update(metrics(scenario, result))
                 rows.append(row)
@@ -183,8 +210,12 @@ def print_summary(runs):
     print("Share of the inseparable advantage over intree that the mixed policy captures (%, pooled over instances)")
     print(share.round(1).to_string())
 
-    for column, title in [("service_level", "Share of demand served, mixed policy"),
-                          ("reclass_per_car", "Reclassifications per served car, mixed policy")]:
+    tables = [("service_level", "Share of demand served, mixed policy"),
+              ("reclass_per_car", "Reclassifications per served car, mixed policy")]
+    # EXTENSION
+    if TRACK_LIMIT:
+        tables.append(("peak_track_utilisation", "Track use at the busiest station, mixed policy"))
+    for column, title in tables:
         mixed = runs[runs["policy"] == "mixed"].set_index(index)[column]
         print()
         print(title)
@@ -237,7 +268,7 @@ def make_figure(runs, instance, column, title, unit, scale, filename):
     figure.legend(*axes[0].get_legend_handles_labels(), loc="upper right", ncol=3, frameon=False,
                   fontsize=9, labelcolor=INK)
     figure.tight_layout(rect=(0, 0, 1, 0.94))
-    figure.savefig(RESULTS / (instance + "_" + filename), dpi=150, facecolor=SURFACE)
+    figure.savefig(RESULTS / (instance + SUFFIX + "_" + filename), dpi=150, facecolor=SURFACE)
     plt.close(figure)
 
 
@@ -248,6 +279,9 @@ def make_figures(runs, instance):
                 "Cars served (% of demand)", 100, "rq1_service_level.png")
     make_figure(runs, instance, "reclass_per_car", "Reclassifications per served car",
                 "Reclassifications per car", 1, "rq1_reclassifications.png")
+    if TRACK_LIMIT:  # EXTENSION
+        make_figure(runs, instance, "peak_track_utilisation", "Track use at the busiest station",
+                    "Tracks needed (% of tracks)", 100, "rq1_tracks.png")
 
 
 if __name__ == "__main__":
@@ -258,7 +292,8 @@ if __name__ == "__main__":
         make_figures(runs, instance)
         all_runs.append(runs)
     runs = pd.concat(all_runs, ignore_index=True)
-    runs.to_csv(RESULTS / "rq1_runs.csv", index=False)
+    filename = "rq1_runs" + SUFFIX + ".csv"
+    runs.to_csv(RESULTS / filename, index=False)
     print_summary(runs)
     print()
-    print("Saved", len(runs), "runs to", RESULTS / "rq1_runs.csv", "and three figures per instance to", RESULTS)
+    print("Saved", len(runs), "runs to", RESULTS / filename, "and the figures per instance to", RESULTS)

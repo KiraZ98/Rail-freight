@@ -1,0 +1,301 @@
+id,origin,destination,category,cars_per_day,time_limit_h,revenue
+d001,1,2,Grain,192,,1612153
+d002,1,2,Vegetable,186,17.19,1715131
+d003,1,3,Petroleum,189,,1080406
+d004,1,4,Building material,183,,533138
+d005,1,5,Chemical fertilizer,108,,794980
+d006,1,7,Fruit,49,7.23,230358
+d007,1,8,Coal,105,,400766
+d008,1,9,Coal,199,,471226
+d009,1,9,Metal Ore,121,,575783
+d010,1,9,Building material,9,,20014
+d011,1,9,Cotton,5,,19268
+d012,1,10,Coal,25,,13754
+d013,1,10,Wood,39,,53935
+d014,1,10,Chemical fertilizer,133,,181785
+d015,1,11,Grain,121,,946969
+d016,1,11,Cotton,191,,1293578
+d017,1,12,Building material,126,,506844
+d018,1,12,Chemical product,89,,726556
+d019,1,12,Machinery,51,,358032
+d020,1,13,Grain,74,,538916
+d021,1,13,Chemical product,114,,783908
+d022,1,14,Building material,106,,351169
+d023,1,15,Coal,53,,170774
+d024,1,15,Wood,196,,1831503
+d025,1,15,Grain,73,,903175
+d026,2,3,Coke,163,,495361
+d027,2,3,Building material,42,,65399
+d028,2,3,Fruit,119,8.73,601756
+d029,2,4,Petroleum,139,,117365
+d030,2,4,Building material,74,,47110
+d031,2,4,Fruit,119,3.8,254176
+d032,2,5,Machinery,92,,117674
+d033,2,5,Vegetable,77,4.02,193355
+d034,2,6,Machinery,134,,439661
+d035,2,7,Chemical fertilizer,34,,306648
+d036,2,7,Fruit,39,23.39,537567
+d037,2,9,Petroleum,43,,109685
+d038,2,9,Wood,1,,2541
+d039,2,10,Grain,198,,1259071
+d040,2,10,Chemical product,91,,543161
+d041,2,12,Building material,93,,147655
+d042,2,12,Grain,9,,27144
+d043,2,12,Cotton,62,,120941
+d044,2,12,Fruit,111,7.27,524915
+d045,2,13,Coke,14,,53595
+d046,2,13,Building material,25,,45032
+d047,2,13,Grain,68,,255337
+d048,2,14,Grain,128,,167097
+d049,2,15,Coal,67,,73849
+d050,2,15,Chemical fertilizer,8,,22384
+d051,2,15,Fruit,161,7.85,841949
+d052,3,1,Coke,43,,401978
+d053,3,1,Grain,145,,1188558
+d054,3,1,Fruit,35,21.88,477905
+d055,3,2,Grain,106,,387087
+d056,3,2,Chemical product,87,,284374
+d057,3,4,Cotton,72,,242036
+d058,3,5,Fruit,12,8.56,51676
+d059,3,7,Coal,165,,538282
+d060,3,7,Petroleum,118,,768342
+d061,3,8,Metal Ore,171,,814371
+d062,3,8,Building material,155,,411899
+d063,3,8,Chemical fertilizer,95,,505544
+d064,3,8,Chemical product,44,,213259
+d065,3,8,Fruit,19,14.41,168064
+d066,3,9,Building material,141,,194407
+d067,3,9,Wood,199,,558290
+d068,3,10,Petroleum,117,,466067
+d069,3,10,Cotton,66,,377328
+d070,3,10,Machinery,136,,580805
+d071,3,13,Coal,81,,190753
+d072,4,1,Building material,10,,27710
+d073,4,1,Chemical product,60,,389840
+d074,4,2,Vegetable,150,3.8,343086
+d075,4,5,Petroleum,8,,12184
+d076,4,5,Coke,154,,378641
+d077,4,8,Petroleum,125,,264073
+d078,4,8,Grain,182,,830336
+d079,4,10,Petroleum,69,,187616
+d080,4,10,Chemical fertilizer,172,,677249
+d081,4,11,Vegetable,9,18.87,99491
+d082,4,12,Coal,193,,377955
+d083,4,13,Coal,165,,172990
+d084,4,13,Grain,80,,277990
+d085,4,13,Chemical fertilizer,47,,130590
+d086,4,13,Machinery,102,,191133
+d087,4,14,Petroleum,70,,108601
+d088,4,15,Coal,10,,18936
+d089,4,15,Fruit,82,10.72,529018
+d090,5,1,Vegetable,143,21.2,1657971
+d091,5,2,Fruit,34,4.02,77856
+d092,5,3,Coal,106,,162322
+d093,5,3,Coke,21,,65817
+d094,5,4,Metal Ore,52,,112308
+d095,5,4,Cotton,179,,396411
+d096,5,6,Coal,191,,510887
+d097,5,6,Grain,32,,237654
+d098,5,7,Wood,2,,21493
+d099,5,7,Grain,178,,1681797
+d100,5,8,Machinery,69,,148709
+d101,5,9,Coal,119,,192339
+d102,5,9,Petroleum,140,,425640
+d103,5,9,Metal Ore,45,,143419
+d104,5,10,Chemical fertilizer,44,,244453
+d105,5,10,Vegetable,181,17.67,1693605
+d106,5,11,Chemical fertilizer,120,,1130884
+d107,5,11,Machinery,166,,907801
+d108,5,11,Vegetable,101,24.02,1235287
+d109,5,11,Fruit,195,24.02,2831591
+d110,5,12,Metal Ore,80,,125506
+d111,5,13,Grain,34,,166814
+d112,5,14,Chemical fertilizer,13,,21807
+d113,5,14,Fruit,39,4.53,104108
+d114,5,15,Building material,98,,82801
+d115,5,15,Cotton,111,,146651
+d116,6,1,Coke,7,,38538
+d117,6,1,Grain,34,,197258
+d118,6,3,Metal Ore,76,,210894
+d119,6,3,Wood,91,,387557
+d120,6,4,Cotton,155,,719092
+d121,6,5,Wood,50,,226650
+d122,6,5,Chemical product,95,,707187
+d123,6,7,Building material,123,,370506
+d124,6,7,Machinery,91,,480234
+d125,6,8,Petroleum,125,,612844
+d126,6,10,Chemical product,81,,358519
+d127,6,11,Coal,190,,905798
+d128,6,12,Building material,192,,541147
+d129,6,12,Vegetable,114,13.47,913132
+d130,6,13,Grain,119,,1202214
+d131,6,15,Chemical product,79,,517757
+d132,7,1,Vegetable,137,7.23,570327
+d133,7,3,Chemical fertilizer,99,,843135
+d134,7,6,Metal Ore,153,,770822
+d135,7,8,Cotton,192,,2357445
+d136,7,9,Chemical fertilizer,46,,270893
+d137,7,9,Fruit,43,17.45,414850
+d138,7,10,Wood,52,,143720
+d139,7,12,Metal Ore,155,,1533425
+d140,7,12,Chemical product,105,,1114461
+d141,7,13,Fruit,46,27.57,658444
+d142,7,14,Coal,4,,12462
+d143,8,1,Petroleum,32,,228952
+d144,8,2,Grain,146,,623669
+d145,8,2,Vegetable,135,9.54,793901
+d146,8,3,Petroleum,71,,214046
+d147,8,3,Grain,139,,861413
+d148,8,3,Vegetable,84,14.41,634616
+d149,8,4,Machinery,154,,384905
+d150,8,6,Wood,117,,911187
+d151,8,7,Building material,96,,600131
+d152,8,7,Vegetable,152,32.33,2750674
+d153,8,9,Petroleum,154,,770409
+d154,8,9,Metal Ore,186,,1183145
+d155,8,9,Cotton,177,,1207995
+d156,8,10,Coke,74,,733257
+d157,8,10,Chemical fertilizer,77,,581895
+d158,8,11,Coal,32,,111543
+d159,8,11,Petroleum,57,,347707
+d160,8,11,Chemical fertilizer,88,,786353
+d161,8,12,Metal Ore,64,,201175
+d162,8,12,Building material,69,,142447
+d163,8,12,Chemical fertilizer,123,,483344
+d164,8,12,Chemical product,46,,231248
+d165,8,13,Coal,136,,176193
+d166,8,13,Petroleum,159,,279374
+d167,8,14,Wood,107,,377102
+d168,8,14,Chemical product,157,,696962
+d169,9,2,Coke,16,,45377
+d170,9,2,Wood,98,,269349
+d171,9,2,Vegetable,20,8.65,97032
+d172,9,3,Building material,55,,74165
+d173,9,3,Vegetable,127,8.95,735468
+d174,9,4,Cotton,111,,426040
+d175,9,5,Grain,100,,536771
+d176,9,5,Cotton,93,,296330
+d177,9,5,Vegetable,96,11.88,666196
+d178,9,8,Cotton,103,,604781
+d179,9,10,Wood,167,,521839
+d180,9,11,Cotton,27,,258213
+d181,9,11,Vegetable,38,27.75,584149
+d182,9,12,Cotton,1,,3282
+d183,9,12,Machinery,158,,371902
+d184,9,13,Building material,21,,60126
+d185,9,14,Metal Ore,112,,231779
+d186,9,14,Fruit,8,7.55,30502
+d187,9,15,Chemical product,188,,1151238
+d188,9,15,Machinery,137,,542445
+d189,10,1,Grain,94,,200327
+d190,10,1,Cotton,55,,80939
+d191,10,1,Vegetable,175,4.52,472608
+d192,10,1,Fruit,131,4.52,382974
+d193,10,2,Coal,97,,176876
+d194,10,2,Coke,36,,208459
+d195,10,3,Grain,74,,550440
+d196,10,3,Chemical product,31,,224450
+d197,10,5,Petroleum,154,,784224
+d198,10,5,Chemical fertilizer,111,,583279
+d199,10,7,Coke,90,,306041
+d200,10,7,Fruit,126,9.73,783088
+d201,10,8,Metal Ore,48,,323319
+d202,10,11,Chemical product,36,,305679
+d203,10,13,Coke,131,,951170
+d204,10,13,Chemical product,151,,1093424
+d205,10,14,Petroleum,169,,562281
+d206,10,14,Building material,74,,164768
+d207,10,15,Grain,191,,1812557
+d208,10,15,Machinery,22,,108900
+d209,11,1,Coal,193,,731758
+d210,11,1,Wood,83,,526139
+d211,11,2,Coal,3,,9463
+d212,11,2,Coke,109,,951459
+d213,11,2,Chemical product,25,,234407
+d214,11,2,Vegetable,85,22.62,1167667
+d215,11,4,Grain,150,,1050170
+d216,11,5,Coke,83,,643963
+d217,11,5,Fruit,101,24.02,1600646
+d218,11,7,Metal Ore,14,,130862
+d219,11,7,Building material,7,,43946
+d220,11,7,Cotton,131,,1299993
+d221,11,7,Chemical fertilizer,147,,1798765
+d222,11,7,Fruit,47,29.49,746686
+d223,11,8,Petroleum,121,,762995
+d224,11,8,Coke,138,,1082747
+d225,11,8,Metal Ore,89,,711072
+d226,11,10,Petroleum,170,,1219794
+d227,11,10,Grain,59,,524866
+d228,11,12,Metal Ore,77,,640395
+d229,11,12,Machinery,151,,1079835
+d230,11,13,Wood,137,,608390
+d231,11,13,Machinery,133,,500002
+d232,11,14,Chemical fertilizer,197,,2136591
+d233,11,14,Machinery,150,,1255983
+d234,11,14,Fruit,189,25.85,2871483
+d235,11,15,Grain,115,,1089361
+d236,11,15,Fruit,111,27.59,1969187
+d237,12,1,Petroleum,162,,801498
+d238,12,1,Grain,56,,459623
+d239,12,2,Wood,27,,76853
+d240,12,3,Chemical fertilizer,31,,40076
+d241,12,4,Petroleum,129,,340939
+d242,12,5,Grain,55,,126727
+d243,12,5,Chemical fertilizer,194,,346183
+d244,12,6,Petroleum,128,,387295
+d245,12,6,Wood,175,,890173
+d246,12,6,Chemical product,15,,66266
+d247,12,6,Vegetable,94,13.47,715026
+d248,12,7,Cotton,46,,387924
+d249,12,9,Wood,89,,278881
+d250,12,10,Wood,178,,1291450
+d251,12,14,Machinery,188,,198139
+d252,13,1,Coke,57,,392713
+d253,13,1,Chemical fertilizer,45,,345168
+d254,13,2,Coal,63,,94096
+d255,13,2,Building material,54,,87955
+d256,13,2,Machinery,172,,462150
+d257,13,2,Vegetable,60,10.03,318388
+d258,13,5,Wood,193,,666851
+d259,13,7,Petroleum,154,,1078423
+d260,13,7,Building material,154,,678020
+d261,13,9,Machinery,78,,381577
+d262,13,10,Coke,15,,85890
+d263,13,11,Building material,138,,407650
+d264,13,12,Metal Ore,126,,491552
+d265,14,3,Coke,46,,84146
+d266,14,3,Grain,108,,265788
+d267,14,5,Cotton,57,,82276
+d268,14,6,Metal Ore,129,,573494
+d269,14,6,Fruit,89,12.41,626836
+d270,14,7,Grain,159,,1583328
+d271,14,8,Metal Ore,46,,127218
+d272,14,8,Wood,108,,367035
+d273,14,9,Coal,188,,182708
+d274,14,9,Wood,83,,176193
+d275,14,9,Machinery,136,,249929
+d276,14,9,Vegetable,77,7.55,337145
+d277,14,10,Coke,139,,635196
+d278,14,10,Machinery,115,,448145
+d279,14,11,Vegetable,11,25.85,169827
+d280,14,12,Vegetable,163,4.4,383305
+d281,14,13,Cotton,24,,113135
+d282,14,13,Machinery,142,,545998
+d283,15,1,Petroleum,150,,1081985
+d284,15,1,Building material,74,,343975
+d285,15,3,Coke,106,,356239
+d286,15,3,Fruit,192,8.08,944032
+d287,15,5,Cotton,3,,4018
+d288,15,7,Coke,144,,1780511
+d289,15,7,Wood,90,,896124
+d290,15,7,Grain,95,,1252859
+d291,15,8,Petroleum,64,,102319
+d292,15,8,Chemical product,49,,128269
+d293,15,9,Metal Ore,99,,460652
+d294,15,9,Grain,83,,504936
+d295,15,9,Cotton,82,,455529
+d296,15,11,Coke,125,,1098987
+d297,15,12,Coke,101,,185517
+d298,15,12,Grain,105,,226936
+d299,15,13,Petroleum,94,,268257
+d300,15,13,Metal Ore,15,,63549

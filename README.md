@@ -24,6 +24,11 @@ A value without a source is left blank, not guessed.
 | `data/instances/random_V10_S80_D40_seed1..5/` | Five random instances: 10 stations, 80 services, 40 demands |
 | `data/german/` | German yard data (Bundestag Drucksache 19/26856) and distance script |
 | `results/` | Run outputs: `rq1_runs.csv` (fractional trains), `rq1_runs_integer.csv` (whole trains) and the RQ1 figures |
+| `check_tracks.py` | Before the RQ1 grid: tracks needed against tracks available per station |
+| `compare_tracks.py` | RQ1 runs without and with the track limit, side by side |
+| `greedy.py` | Greedy heuristic for stage 2 (Algorithm 2 of the base paper), used by `two_stage.py` |
+| `rq2_experiments.py` | RQ2: exact model against the two-stage methods on all generated networks; saves tables and figures |
+
 
 ## How to run
 
@@ -32,6 +37,8 @@ pip install -r requirements.txt
 python main.py
 python test_model.py
 python rq1_experiments.py
+python generate_instance.py
+python rq2_experiments.py
 ```
 
 The instance folder, `EPS` and `CAPACITY_FACTOR` are set at the top of `main.py`.
@@ -57,6 +64,9 @@ print(result["profit"], result["accepted"], result["routes"])
 | `penalty` | If given, station capacity is elastic with this cost per car above the limit (Lin, Wang & Zhao 2021 use 1500) |
 | `integer_trains` | `False` = fractional trains per day as in the base paper; `True` = whole trains as in Xin (2022) |
 | `time_limit` | Gurobi time limit in seconds |
+| `track_limit` | `True` = every station may sort into at most its number of tracks; one track holds `cars_per_track` cars of one service (Xiao et al. 2020, constraints (8)-(10)) |
+| `cars_per_track` | Cars per sorting track, default 200 (Xiao et al. 2020) |
+| `mip_gap` | Gurobi stops at this gap, default 1e-4 (Gurobi's default) |
 
 `data` is a plain dictionary, so single values can be changed before solving, for example
 `data["classification_capacity"]["3"] = 500`.
@@ -68,6 +78,7 @@ from two_stage import solve_two_stage
 
 result = solve_two_stage(data, practical=True)   # hierarchical planning used in practice
 result = solve_two_stage(data, practical=False)  # decomposition [TM-1] + [TM-2]
+result = solve_two_stage(data, second_stage="greedy")  # stage 2 by the greedy heuristic (Algorithm 2)
 ```
 
 ## The model
@@ -81,7 +92,10 @@ The intree rule is written with one "tree" variable per destination instead of t
 pairwise constraints (5). Both forms allow the same solutions; ours needs far fewer constraints.
 
 Our extensions, marked `EXTENSION` in the code: the capacity factor, elastic capacity with a
-penalty, and the eps-constraint on demand served.
+penalty, the eps-constraint on demand served, and a hard track limit per station after
+Xiao et al. (2020), constraints (8)-(10): every service leaving a station is one block and needs
+ceil(cars / 200) sorting tracks; the tracks of all blocks may not exceed the station's tracks.
+The step function is written with one integer variable per block (200 x tracks >= cars).
 
 ## Validation
 
@@ -118,6 +132,10 @@ How the scenarios are defined:
 - **Metrics per run:** profit, demands and cars served, reclassifications per served car,
   share of cars on direct trains, train load factor, station utilisation, runtime and gap.
   With fractional trains the load factor is always 1; set `INTEGER_TRAINS = True` to use it.
+- **Track limit** (`TRACK_LIMIT = True`): stations without a track count in the data get
+  classification capacity / 76 tracks (`TRACKS_SOURCE = "capacity"`; 76 cars per track and day
+  at Maschen, team data sheet). Results go to files with the suffix `_tracks`;
+  `check_tracks.py` shows whether the limit is tight, `compare_tracks.py` compares the runs.
 
 ### First results (preliminary): the paper's case and five random instances
 
@@ -145,26 +163,39 @@ Profit advantage of the mixed policy over the intree policy, mean of the six ins
 - At the published capacities no station of the paper's case is more than 32 % used, so the
   capacity constraints (6) and (7) are not active in the paper's own example.
 
-## Random instances and solve times
+### Track limit (preliminary)
 
-`generate_instance.py` follows Section 6.1.1 of the base paper (ten stations in a
-2000 km square, random services and demands, costs and revenues from equations (47)-(49)).
-Each generated folder has a `SOURCES.md` with the recipe, the seed and the few choices the
-paper leaves open. Change `N_STATIONS`, `SIZES` and `SEEDS` at the top to generate others.
+Tracks per station = classification capacity / 76 (76 cars per track and day at Maschen), so they
+tighten together with the capacity levels.
 
-Solve times of the integrated model on one random instance per size (seed 1, Gurobi, this laptop):
+- At published capacities the limit is never active (busiest station uses 18-27 % of its tracks).
+- At the scaled levels it is active (busiest station 90-100 %).
+- It never increases the advantage of mixed over intree, and reduces it at higher demand:
+  at +50 % demand from 7.6 % to 6.6 % (60 % capacity) and from 5.6 % to 4.8 % (80 %).
+  Likely reason: intree forms fewer, fuller blocks and so needs fewer tracks (to be checked).
+- Still open: separate the effect of tracks from that of capacity (tighten only the tracks).
 
-| Services / demands | Our model | Two-stage decomposition: time, profit loss | CPLEX in the paper (Table 8) |
-|---|---|---|---|
-| 80 / 40 | 0.2 s | 0.1 s, 18.3 % | 15.6 s |
-| 120 / 120 | 0.9 s | 0.5 s, 2.4 % | 268.9 s |
-| 160 / 160 | 1.5 s | 1.3 s, 2.4 % | 668.9 s |
-| 220 / 260 | 8.2 s | 3.7 s, 1.2 % | not solved |
 
-The instances are not the paper's own (it does not publish them) and the computer and solver
-differ, so the times are not directly comparable. The likely main reason for the difference
-is our compact form of the intree rule. For RQ2 this means the paper's instance sizes are too
-easy for our model; larger networks are needed to see where the exact model becomes slow.
+## RQ2 results (preliminary)
+
+`rq2_experiments.py` solves every generated network with three methods: **A** exact model [OM],
+**B** two-stage decomposition with both stages exact, **C** two-stage with the greedy stage 2.
+Mixed policy, fractional trains, Gurobi with 600 s per call; means over 3-5 networks per size.
+
+| Stations / services / demands | Time A | Time B | Time C | Gap B to A | Gap C to A |
+|---|---|---|---|---|---|
+| 10 / 80 / 40 | 0.07 s | 0.06 s | 0.01 s | 3.7 % | 5.4 % |
+| 10 / 220 / 260 | 2.0 s | 1.3 s | 0.12 s | 2.8 % | 11.2 % |
+| 15 / 300 / 300 | 3.8 s | 2.6 s | 0.22 s | 1.5 % | 8.3 % |
+| 20 / 500 / 500 | 15.5 s | 9.8 s | 0.76 s | 4.6 % | 12.8 % |
+
+- The exact model solves every network up to 20 stations to optimality in at most ~16 s.
+- The decomposition alone (B) is only 1.3-1.6x faster, as in the base paper (Table 8);
+  the speed comes from the greedy stage 2: C is 13-20x faster, and more so on larger networks.
+- C earns 5-13 % less than A. The greedy step alone costs 7-9 % (C against B), close to the
+  paper's 7.2 % (Table 9).
+- On a laptop the exact model is limited by **memory** (x variables = services x demands), not
+  by time: A and B are skipped above `MAX_EXACT_X` = 300,000 x variables.
 
 ## Data format
 
@@ -172,7 +203,7 @@ One folder per instance:
 
 | File | Columns |
 |---|---|
-| `nodes.csv` | id, name, accumulation_time_h, transfer_time_h, classification_capacity, sorting_capacity |
+| `nodes.csv` | id, name, accumulation_time_h, transfer_time_h, classification_capacity, sorting_capacity, tracks (optional) |
 | `categories.csv` | id, express (yes/no), car_cost_per_car_km |
 | `demands.csv` | id, origin, destination, category, cars_per_day, time_limit_h, revenue (whole demand) |
 | `service_classes.csv` | id, speed_kmh, max_cars |
@@ -184,17 +215,17 @@ A blank cell means the source gives no value.
 
 | Item | Source to use |
 |---|---|
-| Greedy heuristic for the second stage (RQ2) | Base paper, Algorithm 2 |
-| Larger random instances for RQ2 (more stations) | `generate_instance.py`, change `N_STATIONS` and `SIZES` |
+| RQ2: sizes between 20 stations and the memory limit; 5 seeds per size | `generate_instance.py`, `rq2_experiments.py` (`MAX_EXACT_X`, `gurobi.env`) |
+| Track limit: tighten tracks alone, at fixed capacity | `rq1_experiments.py`, `set_tracks()` |
+| Rerun RQ1 and RQ2 with whole trains | setting `INTEGER_TRAINS` |
 | RQ1 grid on the German network | `rq1_experiments.py`, add it to `INSTANCES` |
-| Track limit per yard (one track per 200 cars, counted per destination block) | Xiao et al. (2020), constraints (8)-(9); Lin, Wang & Zhao (2021), constraint (14) |
 | German network: costs and revenues | Base paper formulas (48)-(49) applied to German distances; DB InfraGO track access charges |
 | German network: demand | Destatis GENESIS 46131 |
 
 ## Decisions
 
 1. **Yard capacity in the base paper:** yes, hard limits (6) and (7). Our contribution is to
-   vary them, make them elastic and add the track limit.
+   vary them, make them elastic and add the track limit(done, hard version of Xiao et al. 2020).
 2. **Baseline policy:** the paper compares mixed with both single policies (Table 15).
    We do the same; intree is the headline baseline.
 3. **To confirm in the team:** the capacity-level definition (`"peak"` or `"station"`) and

@@ -18,6 +18,8 @@ Management 33, 100495:
 | Service classes | express 160 km/h and 20 cars, fast 120 km/h and 30 cars, ordinary 80 km/h and 50 cars |
 | Services | random origin, destination and class; maximal frequency random in [1, 5] |
 | Train cost | 50 x distance x 1.0 (ordinary), 1.1 (fast), 1.2 (express), equation (49) |
+| Tracks per station | classification capacity / 76 cars per track per day (Maschen, AMORE_network_data.xlsx, sheet Assumptions) |
+
 
 Distance is the Euclidean distance between the stations.
 

@@ -28,3 +28,7 @@ of Table 12 (cars / train size x train cost + cars x mileage x unit car cost) eq
   4,213,154.48 non-express), costs 9,231,643.59 CNY, 24 shipments accepted (Table 13).
 
 Both are reproduced exactly by `test_model.py`.
+
+## Add tracks (NOT in Paper)
+
+| `nodes.csv`, column `tracks` | Not in the paper. Classification capacity of Table 10 / 76 cars per track per day (Maschen, `data/german/AMORE_network_data.xlsx`, sheet Assumptions), computed by `add_tracks.py` | Assumption of ours |

@@ -13,16 +13,21 @@ import copy
 
 from model import solve
 
+from greedy import solve_greedy
+from model import solve
+
 # Service classes of each stage in the practical approach (Fig. 3a of the paper)
 EXPRESS_STAGE_CLASSES = ["Express", "Fast"]
 NON_EXPRESS_STAGE_CLASSES = ["Ordinary"]
 
 
-def solve_two_stage(data, practical=False, policy="mixed", capacity_factor=1.0, penalty=None, time_limit=3600):
+def solve_two_stage(data, practical=False, policy="mixed", capacity_factor=1.0, penalty=None, 
+                    time_limit=3600, track_limit=False, second_stage="exact", mip_gap=1e-4):
     """Solve stage 1 (express) and stage 2 (non-express) and return the combined results.
 
     practical  False = decomposition [TM-1] + [TM-2]; True = practical approach with
                the service classes restricted per stage.
+    stage 2  "exact" = stage 2 [TM-2] with Gurobi; "greedy" = Algorithm 2 of the paper (greedy.py)
     The other options are the same as in model.solve.
     """
     express = [k for k in data["demands"] if data["express"][data["category"][k]]]
@@ -40,7 +45,8 @@ def solve_two_stage(data, practical=False, policy="mixed", capacity_factor=1.0, 
     if practical:
         stage1["services"] = [s for s in data["services"] if s[2] in EXPRESS_STAGE_CLASSES]
 
-    result1 = solve(stage1, policy=policy, penalty=penalty, time_limit=time_limit)
+    result1 = solve(stage1, policy=policy, penalty=penalty, time_limit=time_limit, track_limit=track_limit,
+                    mip_gap=mip_gap)
 
     # ------------------------------------------------------------------
     # Stage 2 [TM-2]: non-express demands with the remaining capacity
@@ -60,13 +66,22 @@ def solve_two_stage(data, practical=False, policy="mixed", capacity_factor=1.0, 
     for s, trains in result1["trains"].items():
         if s in stage2["max_frequency"]:
             stage2["max_frequency"][s] -= trains
+    # EXTENSION: sorting tracks already used by the express demands. Conservative: a block that
+    # stage 1 fills only partly still takes its whole track away from stage 2.
+    for v in stage2.get("tracks", {}):
+        stage2["tracks"][v] -= result1["tracks_used"][v]
 
-    result2 = solve(stage2, policy=policy, penalty=penalty, time_limit=time_limit)
-
+    if second_stage == "greedy":
+        if penalty is not None:
+            raise ValueError("the greedy heuristic only knows hard capacities; use penalty=None")
+        result2 = solve_greedy(stage2, policy=policy, track_limit=track_limit)  # Algorithm 2, Section 5.3, greedy does not use Gurobi, so no mip gap
+    else:
+        result2 = solve(stage2, policy=policy, penalty=penalty, time_limit=time_limit, track_limit=track_limit, mip_gap=mip_gap)
     # ------------------------------------------------------------------
     # Combined results
     # ------------------------------------------------------------------
-    result = {"status": result1["status"] if result1["status"] == result2["status"] else "time limit"}
+    result = {"status": "optimal" if result1["status"] == result2["status"] == "optimal"
+              else result1["status"] + " + " + result2["status"]}
     result["profit_express"] = result1["profit"]
     result["profit_non_express"] = result2["profit"]
     for key in ["profit", "revenue", "train_cost", "car_cost", "penalty", "total_cost", "demand_served", "runtime"]:
@@ -78,6 +93,6 @@ def solve_two_stage(data, practical=False, policy="mixed", capacity_factor=1.0, 
     result["trains"] = dict(result1["trains"])
     for s, trains in result2["trains"].items():
         result["trains"][s] = result["trains"].get(s, 0) + trains
-    for key in ["classified", "sorted", "reclassified"]:
+    for key in ["classified", "sorted", "reclassified", "tracks_used"]:
         result[key] = {v: result1[key][v] + result2[key][v] for v in data["stations"]}
     return result

@@ -8,6 +8,7 @@ from pathlib import Path
 from model import POLICIES, solve
 from read_data import read_data
 from two_stage import solve_two_stage
+import math
 
 XIN2025 = Path(__file__).parent / "data" / "instances" / "xin2025_example"
 XIN2022 = Path(__file__).parent / "data" / "instances" / "xin2022_example"
@@ -125,6 +126,71 @@ def test_no_revenue_no_service():
     assert result["accepted"] == []
     assert result["trains"] == {}
 
+def tracks_from_routes(data, result, cars_per_track=200):
+    """Tracks per station recomputed from the routes alone: ceil(cars / 200) for every service used."""
+    cars = {}
+    for k in result["accepted"]:
+        for s in result["routes"][k]:
+            cars[s] = cars.get(s, 0) + data["volume"][k]
+    needed = {v: 0 for v in data["stations"]}
+    for (i, j, c), n in cars.items():
+        needed[i] += math.ceil(n / cars_per_track)
+    return needed
+
+
+def test_track_limit():
+    # EXTENSION: track limit of Xiao et al. (2020), constraints (8)-(10)
+    data = read_data(XIN2025)
+    base = solve(data)
+    needed = tracks_from_routes(data, base)
+    assert base["tracks_used"] == needed  # the model reports what the routes need
+
+    # 1. Exactly the tracks the paper's plan needs: the optimum is unchanged
+    data["tracks"] = dict(needed)
+    assert abs(solve(data, track_limit=True)["profit"] - base["profit"]) < 0.01
+
+    # 2. One track less at the busiest station: the paper's plan is no longer allowed,
+    #    profit cannot rise, and the limit holds when recomputed from the routes
+    busiest = max(needed, key=needed.get)
+    data["tracks"][busiest] -= 1
+    tight = solve(data, track_limit=True)
+    assert tight["profit"] <= base["profit"] + 0.01
+    recomputed = tracks_from_routes(data, tight)
+    for v in data["stations"]:
+        assert recomputed[v] <= data["tracks"][v]
+
+    # 3. No tracks anywhere: no train can be formed, so nothing is accepted
+    data["tracks"] = {v: 0 for v in data["stations"]}
+    assert solve(data, track_limit=True)["accepted"] == []
+
+
+def test_track_limit_needs_data():
+    data = read_data(XIN2025)
+    data["tracks"] = {}
+    try:
+        solve(data, track_limit=True)
+        assert False, "expected a ValueError"
+    except ValueError:
+        pass
+
+def test_greedy_second_stage():
+    # Algorithm 2 of the paper in place of the exact stage 2, on the practical approach of Table 13
+    data = read_data(XIN2025)
+    exact = solve_two_stage(data, practical=True)
+    greedy = solve_two_stage(data, practical=True, second_stage="greedy")
+    assert abs(greedy["profit_express"] - exact["profit_express"]) < 0.01       # same stage 1
+    assert greedy["profit_non_express"] <= exact["profit_non_express"] + 0.01   # never better than exact
+    assert abs(greedy["profit_non_express"] - 4168119.60) < 0.01                # our reference value
+    assert greedy["status"] == "optimal + heuristic"
+
+    # the intree rule holds: cars for one destination leave each station on one service only
+    express = {k: data["express"][data["category"][k]] for k in data["demands"]}
+    tree = {}
+    for k in greedy["accepted"]:
+        if not express[k]:
+            for s in greedy["routes"][k]:
+                assert tree.setdefault((data["destination"][k], s[0]), s) == s
+
 
 if __name__ == "__main__":
     test_xin2025_published_optimum()
@@ -136,4 +202,7 @@ if __name__ == "__main__":
     test_policy_order()
     test_station_capacity()
     test_no_revenue_no_service()
+    test_track_limit()
+    test_track_limit_needs_data()
+    test_greedy_second_stage()
     print("All tests passed.")

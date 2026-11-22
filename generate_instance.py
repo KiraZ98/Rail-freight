@@ -11,10 +11,16 @@ import random
 from pathlib import Path
 
 # ---- settings ----
-N_STATIONS = 10        # the paper uses ten stations
-SIZES = [(80, 40)]     # (number of services, number of demands); the paper uses 80-220 services
-SEEDS = [1, 2, 3, 4, 5]
+SIZES = [
+    (10, 220, 260),
+    (15, 300, 300),
+    (20, 500, 500),
+   """ (30, 1000, 1000),
+    (40, 1500, 1500),"""
+]
+SEEDS = [1, 2, 3]
 OUTPUT = Path(__file__).parent / "data" / "instances"
+TRACKS_THROUGHPUT = 76  # cars per track per day: data/german/AMORE_network_data.xlsx, sheet Assumptions
 
 # Goods categories: (name, unit car cost, express?). Table 11 of the paper:
 # 13 categories, two of them express, car costs in the range [0.9, 2.5].
@@ -44,14 +50,21 @@ def generate_instance(n_stations, n_services, n_demands, seed, folder):
 
     nodes = []
     for v in stations:
+        acc = round(rng.uniform(0.02, 0.06), 2)   # accumulation time parameter
+        tra = round(rng.uniform(0.01, 0.03), 2)   # transfer time parameter
+        cap_in = rng.randint(1000, 5000)          # classification capacity
+        cap_out = rng.randint(1000, 5000)         # sorting capacity
+        tracks = round(cap_in / TRACKS_THROUGHPUT)  # EXTENSION: tracks implied by the capacity
         nodes.append([
-            v, "Station " + v,
-            round(rng.uniform(0.02, 0.06), 2),  # accumulation time parameter
-            round(rng.uniform(0.01, 0.03), 2),  # transfer time parameter
-            rng.randint(1000, 5000),            # classification capacity
-            rng.randint(1000, 5000),            # sorting capacity
-            round(x[v], 1), round(y[v], 1),
+            v, "Station " + v, 
+            acc, 
+            tra, 
+            cap_in, 
+            cap_out, 
+            round(x[v], 1), round(y[v], 1), 
+            tracks
         ])
+    
 
     # ---- services: random origin, destination and class; no service twice ----
     possible = [(i, j, c) for i in stations for j in stations if i != j for c in CLASSES]
@@ -70,6 +83,10 @@ def generate_instance(n_stations, n_services, n_demands, seed, folder):
     # ---- demands: random origin, destination and category; no (o, d, category) twice ----
     slowest = min(speed for (speed, size, factor) in CLASSES.values())
     possible = [(o, d, p) for o in stations for d in stations if o != d for p in range(len(CATEGORIES))]
+    
+    
+    if n_demands > len(possible):
+        raise ValueError("at most " + str(len(possible)) + " demands are possible with " + str(n_stations) + " stations")
     demands = []
     chosen = sorted(rng.sample(possible, n_demands), key=lambda k: (int(k[0]), int(k[1]), k[2]))
     for number, (o, d, p) in enumerate(chosen, 1):
@@ -91,7 +108,7 @@ def generate_instance(n_stations, n_services, n_demands, seed, folder):
             writer.writerows(rows)
 
     write("nodes.csv", ["id", "name", "accumulation_time_h", "transfer_time_h",
-                        "classification_capacity", "sorting_capacity", "x_km", "y_km"], nodes)
+                        "classification_capacity", "sorting_capacity", "x_km", "y_km", "tracks"], nodes)
     write("categories.csv", ["id", "express", "car_cost_per_car_km"],
           [[name, "yes" if express else "no", cost] for (name, cost, express) in CATEGORIES])
     write("service_classes.csv", ["id", "speed_kmh", "max_cars"],
@@ -123,6 +140,8 @@ Management 33, 100495:
 | Service classes | express 160 km/h and 20 cars, fast 120 km/h and 30 cars, ordinary 80 km/h and 50 cars |
 | Services | random origin, destination and class; maximal frequency random in [1, 5] |
 | Train cost | 50 x distance x 1.0 (ordinary), 1.1 (fast), 1.2 (express), equation (49) |
+| Tracks per station | classification capacity / 76 cars per track per day (Maschen, AMORE_network_data.xlsx, sheet Assumptions) |
+
 
 Distance is the Euclidean distance between the stations.
 
@@ -139,8 +158,11 @@ def instance_name(n_stations, n_services, n_demands, seed):
 
 
 if __name__ == "__main__":
-    for (n_services, n_demands) in SIZES:
+    for (n_stations, n_services, n_demands) in SIZES:
         for seed in SEEDS:
-            name = instance_name(N_STATIONS, n_services, n_demands, seed)
-            generate_instance(N_STATIONS, n_services, n_demands, seed, OUTPUT / name)
+            name = instance_name(n_stations, n_services, n_demands, seed)
+            if (OUTPUT / name).exists():
+                print("exists", name)  # never overwrite a network that results were computed on
+                continue
+            generate_instance(n_stations, n_services, n_demands, seed, OUTPUT / name)
             print("generated", name)

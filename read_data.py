@@ -24,7 +24,13 @@ def read_data(folder):
     given = nodes.dropna(subset=["classification_capacity"])
     data["classification_capacity"] = dict(zip(given["id"], given["classification_capacity"]))  # Capa_in
     given = nodes.dropna(subset=["sorting_capacity"])
-    data["sorting_capacity"] = dict(zip(given["id"], given["sorting_capacity"]))                # Capa_out
+    data["sorting_capacity"] = dict(zip(given["id"], given["sorting_capacity"]))
+    # EXTENSION: number of sorting tracks per station, only where the source gives one
+    if "tracks" in nodes.columns:
+        given = nodes.dropna(subset=["tracks"])
+        data["tracks"] = dict(zip(given["id"], given["tracks"]))
+    else:
+        data["tracks"] = {}  # older instance folders have no track column
 
     # ---- goods categories (set P) ----
     data["express"] = dict(zip(categories["id"], categories["express"] == "yes"))
