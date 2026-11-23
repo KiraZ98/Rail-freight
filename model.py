@@ -76,7 +76,6 @@ def solve(data, policy="mixed", eps=None, capacity_factor=1.0, penalty=None,
     m = gp.Model("service_network_design")
     m.Params.OutputFlag = 1 if verbose else 0
     m.Params.TimeLimit = time_limit
-    m.Params.TimeLimit = time_limit
     m.Params.MIPGap = mip_gap
 
     x = m.addVars(D, S, vtype=GRB.BINARY, name="x")  # (10) x[k,i,j,c] = 1 if demand k uses service (i,j,c)

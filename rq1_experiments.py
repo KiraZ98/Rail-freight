@@ -13,8 +13,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 from model import solve
-from read_data import read_data
-import math
+from read_data import read_data, tracks_from_capacity
 
 # ---- settings ----
 DATA = Path(__file__).parent / "data" / "instances"
@@ -30,9 +29,9 @@ INTEGER_TRAINS = False                          # False = fractional trains as i
 TIME_LIMIT = 600                                # seconds per run
 
 TRACK_LIMIT = True          # EXTENSION: hard track limit per station (Xiao et al. 2020)
-TRACKS_SOURCE = "capacity"   # "data": column tracks of nodes.csv (German network)
-                             # "capacity": classification capacity / CARS_PER_TRACK_DAY
-CARS_PER_TRACK_DAY = 76      # Maschen, ~76 cars per track per day (team data sheet: dpa/heise 2020)
+TRACKS_SOURCE = "capacity"   # "capacity": recomputed from each scenario's capacity, so tracks tighten
+                             #   together with the capacity level (read_data.tracks_from_capacity)
+                             # "data": the tracks column of nodes.csv, fixed at every capacity level
 # Suffix for result files, so runs with different settings never overwrite each other
 SUFFIX = ("_integer" if INTEGER_TRAINS else "") + ("_tracks" if TRACK_LIMIT else "")
 
@@ -96,10 +95,10 @@ def set_capacity(data, reference, level):
 def set_tracks(data):
     """Return a copy of the data with the track count of every station (used if TRACK_LIMIT)."""
     new = copy.deepcopy(data)
-    if TRACKS_SOURCE == "capacity":
-        new["tracks"] = {v: math.floor(data["classification_capacity"][v] / CARS_PER_TRACK_DAY)
+    if TRACKS_SOURCE == "capacity":  # from the (scaled) capacity of this scenario
+        new["tracks"] = {v: tracks_from_capacity(data["classification_capacity"][v])
                          for v in data["stations"] if v in data["classification_capacity"]}
-    return new
+    return new                       # "data": the tracks column of nodes.csv, unchanged
 
 
 # ----------------------------------------------------------------------

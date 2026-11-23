@@ -10,17 +10,18 @@ import math
 import random
 from pathlib import Path
 
+from read_data import tracks_from_capacity
+
 # ---- settings ----
 SIZES = [
     (10, 220, 260),
     (15, 300, 300),
     (20, 500, 500),
-   """ (30, 1000, 1000),
-    (40, 1500, 1500),"""
+    # (30, 1000, 1000),   # larger networks for RQ2: remove the # to generate them
+    # (40, 1500, 1500),
 ]
 SEEDS = [1, 2, 3]
 OUTPUT = Path(__file__).parent / "data" / "instances"
-TRACKS_THROUGHPUT = 76  # cars per track per day: data/german/AMORE_network_data.xlsx, sheet Assumptions
 
 # Goods categories: (name, unit car cost, express?). Table 11 of the paper:
 # 13 categories, two of them express, car costs in the range [0.9, 2.5].
@@ -54,7 +55,7 @@ def generate_instance(n_stations, n_services, n_demands, seed, folder):
         tra = round(rng.uniform(0.01, 0.03), 2)   # transfer time parameter
         cap_in = rng.randint(1000, 5000)          # classification capacity
         cap_out = rng.randint(1000, 5000)         # sorting capacity
-        tracks = round(cap_in / TRACKS_THROUGHPUT)  # EXTENSION: tracks implied by the capacity
+        tracks = tracks_from_capacity(cap_in)     # EXTENSION: tracks implied by the capacity
         nodes.append([
             v, "Station " + v, 
             acc, 
@@ -140,7 +141,7 @@ Management 33, 100495:
 | Service classes | express 160 km/h and 20 cars, fast 120 km/h and 30 cars, ordinary 80 km/h and 50 cars |
 | Services | random origin, destination and class; maximal frequency random in [1, 5] |
 | Train cost | 50 x distance x 1.0 (ordinary), 1.1 (fast), 1.2 (express), equation (49) |
-| Tracks per station | classification capacity / 76 cars per track per day (Maschen, AMORE_network_data.xlsx, sheet Assumptions) |
+| Tracks per station | classification capacity / 76 cars per track per day, rounded down (Maschen, AMORE_network_data.xlsx, sheet Assumptions); an assumption of ours, not in the paper |
 
 
 Distance is the Euclidean distance between the stations.

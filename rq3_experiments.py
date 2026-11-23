@@ -20,7 +20,7 @@ import numpy as np
 import pandas as pd
 
 from model import solve
-from read_data import read_data
+from read_data import CARS_PER_TRACK_DAY, read_data, tracks_from_capacity
 
 
 # ---- experiment settings ----
@@ -42,7 +42,8 @@ CAPACITY_REFERENCE = "peak"
 # require a track limit; set True to also use estimated track counts.
 TRACK_LIMIT = False
 CARS_PER_TRACK = 200
-CARS_PER_TRACK_DAY = 76
+TRACKS_SOURCE = "capacity"  # same rule as rq1_experiments.py: "capacity" = recomputed from each
+                            # scenario's capacity; "data" = the tracks column of nodes.csv
 OUTPUT_SUFFIX = "_tracks" if TRACK_LIMIT else ""
 
 # Use whole trains for realistic operating plans. Change this after the team
@@ -85,15 +86,15 @@ def set_capacity(data, reference, level):
 
 
 def set_track_limits(data):
-    """Attach track counts, preferring source counts and estimating missing ones."""
+    """Attach track counts with the same rule as rq1_experiments.set_tracks()."""
     scenario = dict(data)
-    source_tracks = dict(data.get("tracks", {}))
-    for station in data["stations"]:
-        if station not in source_tracks and station in data["classification_capacity"]:
-            source_tracks[station] = math.floor(
-                data["classification_capacity"][station] / CARS_PER_TRACK_DAY
-            )
-    scenario["tracks"] = source_tracks
+    if TRACKS_SOURCE == "capacity":
+        scenario["tracks"] = {
+            station: tracks_from_capacity(data["classification_capacity"][station])
+            for station in data["stations"] if station in data["classification_capacity"]
+        }
+    else:
+        scenario["tracks"] = dict(data.get("tracks", {}))
     return scenario
 
 

@@ -22,6 +22,7 @@ A value without a source is left blank, not guessed.
 | `data/instances/xin2025_example/` | 8-station case of the base paper (Tables 10-12 and its services file) |
 | `data/instances/xin2022_example/` | 5-station example of Xin (2022), Tables 4-8 |
 | `data/instances/random_V10_S80_D40_seed1..5/` | Five random instances: 10 stations, 80 services, 40 demands |
+| `data/instances/random_V10_S220_D260_*`, `random_V15_*`, `random_V20_*` | Larger random instances for RQ2, three seeds per size |
 | `data/german/` | German yard data (Bundestag Drucksache 19/26856) and distance script |
 | `results/` | RQ1, RQ2 and RQ3 run tables and figures |
 | `check_tracks.py` | Before the RQ1 grid: tracks needed against tracks available per station |
@@ -134,9 +135,11 @@ How the scenarios are defined:
 - **Metrics per run:** profit, demands and cars served, reclassifications per served car,
   share of cars on direct trains, train load factor, station utilisation, runtime and gap.
   With fractional trains the load factor is always 1; set `INTEGER_TRAINS = True` to use it.
-- **Track limit** (`TRACK_LIMIT = True`): stations without a track count in the data get
-  classification capacity / 76 tracks (`TRACKS_SOURCE = "capacity"`; 76 cars per track and day
-  at Maschen, team data sheet). Results go to files with the suffix `_tracks`;
+- **Track limit** (`TRACK_LIMIT = True`): tracks per station = classification capacity / 76,
+  rounded down (`read_data.tracks_from_capacity`, the one rule used by every script; 76 cars per
+  track and day at Maschen, team data sheet). An assumption of ours: no source gives track counts
+  for these networks. `TRACKS_SOURCE = "capacity"` recomputes them from each scenario's capacity,
+  so tracks tighten with the capacity level; `"data"` keeps the `tracks` column of `nodes.csv`. Results go to files with the suffix `_tracks`;
   `check_tracks.py` shows whether the limit is tight, `compare_tracks.py` compares the runs.
 
 ### First results (preliminary): the paper's case and five random instances
@@ -167,8 +170,8 @@ Profit advantage of the mixed policy over the intree policy, mean of the six ins
 
 ### Track limit (preliminary)
 
-Tracks per station = classification capacity / 76 (76 cars per track and day at Maschen), so they
-tighten together with the capacity levels.
+Tracks per station = classification capacity / 76, rounded down (76 cars per track and day at
+Maschen), so they tighten together with the capacity levels.
 
 - At published capacities the limit is never active (busiest station uses 18-27 % of its tracks).
 - At the scaled levels it is active (busiest station 90-100 %).
@@ -192,10 +195,11 @@ Mixed policy, fractional trains, Gurobi with 600 s per call; means over 3-5 netw
 | 20 / 500 / 500 | 15.5 s | 9.8 s | 0.76 s | 4.6 % | 12.8 % |
 
 - The exact model solves every network up to 20 stations to optimality in at most ~16 s.
-- The decomposition alone (B) is only 1.3-1.6x faster, as in the base paper (Table 8);
-  the speed comes from the greedy stage 2: C is 13-20x faster, and more so on larger networks.
-- C earns 5-13 % less than A. The greedy step alone costs 7-9 % (C against B), close to the
-  paper's 7.2 % (Table 9).
+- The decomposition alone (B) is only 1.3-1.6x faster; in the base paper (Table 8) it saves even
+  less, about 1.5 % of the time. The speed comes from the greedy stage 2: C is 14-20x faster, and
+  more so on larger networks.
+- C earns 5-13 % less than A. The greedy step alone costs 1.7 % on the smallest networks and
+  6.9-8.6 % on the larger ones (C against B); the paper reports 7.2 % on average (Table 9).
 - On a laptop the exact model is limited by **memory** (x variables = services x demands), not
   by time: A and B are skipped above `MAX_EXACT_X` = 300,000 x variables.
 
@@ -238,7 +242,7 @@ Largest feasible share of demand served (the "service ceiling"), mean over the s
 - **Service is expensive.** Serving one percentage point more demand costs about 207–219k
   CNY/day at full capacity and 303–323k at 60 % capacity (mean linear slope of the frontier).
 - **The model serves little demand at maximum profit.** At 100 % capacity the profit-maximising
-  solution serves only 12.9–72.6 % of demand (mean 33.8 %): most shipments are unprofitable to
+  solution serves only 12.9–72.6 % of demand (mean 33.4 %): most shipments are unprofitable to
   carry, so a low service level reflects rejection of loss-making demand, not scarce capacity.
 
 ## Data format
@@ -269,9 +273,13 @@ A blank cell means the source gives no value.
 ## Decisions
 
 1. **Yard capacity in the base paper:** yes, hard limits (6) and (7). Our contribution is to
-   vary them, make them elastic and add the track limit(done, hard version of Xiao et al. 2020).
+   vary them, make them elastic and add the track limit (done: hard version of Xiao et al. 2020).
 2. **Baseline policy:** the paper compares mixed with both single policies (Table 15).
    We do the same; intree is the headline baseline.
 3. **To confirm in the team:** the capacity-level definition (`"peak"` or `"station"`) and
    demand growth as extra shipments, both described under RQ1 experiments.
 4. **Open:** time limit per run and how the MIP gap is reported.
+5. **Open:** whole or fractional trains. RQ3 uses whole trains (`INTEGER_TRAINS = True`), RQ1 and
+   RQ2 fractional; all three should use the same before the report.
+6. **Open:** the track limit in RQ1. `rq1_experiments.py` now runs with `TRACK_LIMIT = True` by
+   default, and tracks tighten together with capacity; separating the two effects is still to do.

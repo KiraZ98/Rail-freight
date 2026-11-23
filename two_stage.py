@@ -11,8 +11,6 @@ Two variants, both from Xin, Wu & Wang (2025):
 """
 import copy
 
-from model import solve
-
 from greedy import solve_greedy
 from model import solve
 

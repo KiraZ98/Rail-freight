@@ -31,4 +31,4 @@ Both are reproduced exactly by `test_model.py`.
 
 ## Add tracks (NOT in Paper)
 
-| `nodes.csv`, column `tracks` | Not in the paper. Classification capacity of Table 10 / 76 cars per track per day (Maschen, `data/german/AMORE_network_data.xlsx`, sheet Assumptions), computed by `add_tracks.py` | Assumption of ours |
+| `nodes.csv`, column `tracks` | Not in the paper. Classification capacity of Table 10 / 76 cars per track per day, rounded down (Maschen, `data/german/AMORE_network_data.xlsx`, sheet Assumptions), computed by `add_tracks.py` | Assumption of ours |

@@ -3,7 +3,20 @@
 The result is one dictionary with the sets and parameters of the model.
 The names follow Tables 1-3 of Xin, Wu & Wang (2025).
 """
+import math
+
 import pandas as pd
+
+# EXTENSION: cars one classification track can handle per day. Maschen: about 2 x 4,000 wagons
+# per day (dpa/heise 2020) over 105 tracks (Bundestag 19/26856); data/german/AMORE_network_data.xlsx,
+# sheet Assumptions. An assumption of ours, used only to estimate track counts where no source gives them.
+CARS_PER_TRACK_DAY = 76
+
+
+def tracks_from_capacity(classification_capacity):
+    """Estimated number of classification tracks of a station: capacity / 76, rounded down.
+    The one rule used by every script (generate_instance.py, rq1_experiments.py, rq3_experiments.py)."""
+    return math.floor(classification_capacity / CARS_PER_TRACK_DAY)
 
 
 def read_data(folder):

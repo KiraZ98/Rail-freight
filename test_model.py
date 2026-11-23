@@ -120,6 +120,26 @@ def test_station_capacity():
     assert elastic["profit"] >= tight["profit"] - 0.01
 
 
+def test_eps_constraint():
+    # RQ3: requiring at least a share eps of the cars to be served is respected, and can only cost profit
+    data = read_data(XIN2025)
+    free = solve(data)
+    forced = solve(data, eps=0.8)
+    assert forced["status"] == "optimal"
+    assert forced["demand_served"] >= 0.8 * forced["total_demand"] - 0.001
+    assert free["demand_served"] < 0.8 * free["total_demand"]  # so the requirement really binds
+    assert forced["profit"] <= free["profit"] + 0.01
+
+
+def test_tracks_from_capacity():
+    # one rule for every script: capacity / 76, rounded down
+    from read_data import tracks_from_capacity
+    assert tracks_from_capacity(1163) == 15   # station 1 of the 8-station case
+    assert tracks_from_capacity(4018) == 52   # station 3: 52.9 is rounded down
+    data = read_data(XIN2025)
+    assert data["tracks"] == {v: tracks_from_capacity(c) for v, c in data["classification_capacity"].items()}
+
+
 def test_no_revenue_no_service():
     # Xin (2022) gives no revenue, so without eps the profit model serves nothing
     result = solve(read_data(XIN2022))
@@ -202,6 +222,8 @@ if __name__ == "__main__":
     test_policy_order()
     test_station_capacity()
     test_no_revenue_no_service()
+    test_eps_constraint()
+    test_tracks_from_capacity()
     test_track_limit()
     test_track_limit_needs_data()
     test_greedy_second_stage()
