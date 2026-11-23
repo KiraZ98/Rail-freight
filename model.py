@@ -221,6 +221,8 @@ def solve(data, policy="mixed", eps=None, capacity_factor=1.0, penalty=None,
         # EXTENSION: the number of tracks used at each station, may be smaller than the limit
         "tracks_used": {v: sum(math.ceil(round(cars_on_service[s].getValue(), 6) / cars_per_track)
                                for s in S if s[0] == v) for v in V},
+        # tracks the model reserves at each station with a track limit (at least tracks_used)
+        "tracks_allocated": {v: sum(round(tracks[s].X) for s in blocks if s[0] == v) for v in track_stations},
     }
     result["total_cost"] = result["train_cost"] + result["car_cost"] + result["penalty"]
     return result

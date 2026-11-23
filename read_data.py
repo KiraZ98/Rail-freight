@@ -28,7 +28,7 @@ def read_data(folder):
     # EXTENSION: number of sorting tracks per station, only where the source gives one
     if "tracks" in nodes.columns:
         given = nodes.dropna(subset=["tracks"])
-        data["tracks"] = dict(zip(given["id"], given["tracks"]))
+        data["tracks"] = dict(zip(given["id"], given["tracks"].astype(int)))
     else:
         data["tracks"] = {}  # older instance folders have no track column
 
