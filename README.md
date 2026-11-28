@@ -23,7 +23,9 @@ A value without a source is left blank, not guessed.
 | `data/instances/xin2022_example/` | 5-station example of Xin (2022), Tables 4-8 |
 | `data/instances/random_V10_S80_D40_seed1..5/` | Five random instances: 10 stations, 80 services, 40 demands |
 | `data/instances/random_V10_S220_D260_*`, `random_V15_*`, `random_V20_*` | Larger random instances for RQ2, three seeds per size |
-| `data/german/` | German yard data (Bundestag Drucksache 19/26856) and distance script |
+| `data/german/` | German yard data (Bundestag Drucksache 19/26856), yard coordinates, rail distances and the distance script |
+| `build_german_instance.py` | Builds the German network as instances from the yard data and rail distances |
+| `data/instances/german_V19_D80_seed1..3/` | German network: 19 yards, 1,026 services, 80 synthetic demands (three demand sets) |
 | `results/` | RQ1, RQ2 and RQ3 run tables and figures |
 | `check_tracks.py` | Before the RQ1 grid: tracks needed against tracks available per station |
 | `compare_tracks.py` | RQ1 runs without and with the track limit, side by side |
@@ -41,6 +43,7 @@ python test_model.py
 python rq1_experiments.py
 python generate_instance.py
 python rq2_experiments.py
+python build_german_instance.py   # after data/german/build_distances.py
 python rq3_experiments.py
 ```
 
@@ -245,6 +248,27 @@ Largest feasible share of demand served (the "service ceiling"), mean over the s
   solution serves only 12.9–72.6 % of demand (mean 33.4 %): most shipments are unprofitable to
   carry, so a low service level reflects rejection of loss-making demand, not scarce capacity.
 
+## German network
+
+`build_german_instance.py` turns the German yard data into three instances
+(`german_V19_D80_seed1..3`, one per synthetic demand set). Every value and its source is listed
+in each folder's `SOURCES.md`:
+
+- **Yards:** the 20 yards with the most classification tracks (Bundestag Drucksache 19/26856).
+  Seddin and Seddin Süd are 0.3 km apart and on the same rail point, so they are merged into one
+  node with 60 tracks: 19 yards. Capacity = tracks x 76 cars per track per day.
+- **Rail distances:** shortest paths on the OpenStreetMap main-line rail network
+  (`data/german/build_distances.py`, all 342 yard pairs connected). Rail distance is on average
+  1.28 times the straight-line distance (1.10 to 1.77).
+- **Not yet German:** service classes, train and car costs, waiting times and demand follow the
+  base paper's values and recipe; demand is synthetic (80 shipments per set).
+
+First test (published capacities, fractional trains): all 18 runs (3 demand sets x 3 policies,
+with and without the track limit) solve to optimality in 2-13 s. At maximum profit 94-99 % of
+the demand is served, because every yard pair has a direct service. The busiest yard uses
+45-66 % of its capacity and the track limit never binds, so, as in the paper's case, capacity only
+matters once it is scaled down. Mixed earns 0.4-1.3 % more than intree and the same as inseparable.
+
 ## Data format
 
 One folder per instance:
@@ -266,9 +290,9 @@ A blank cell means the source gives no value.
 | RQ2: sizes between 20 stations and the memory limit; 5 seeds per size | `generate_instance.py`, `rq2_experiments.py` (`MAX_EXACT_X`, `gurobi.env`) |
 | Track limit: tighten tracks alone, at fixed capacity | `rq1_experiments.py`, `set_tracks()` |
 | Rerun RQ1 and RQ2 with whole trains | setting `INTEGER_TRAINS` |
-| RQ1 grid on the German network | `rq1_experiments.py`, add it to `INSTANCES` |
-| German network: costs and revenues | Base paper formulas (48)-(49) applied to German distances; DB InfraGO track access charges |
-| German network: demand | Destatis GENESIS 46131 |
+| RQ1-RQ3 on the German network | add `german_V19_D80_seed1..3` to `INSTANCES` in the experiment scripts |
+| German network: real demand instead of the synthetic one | Destatis GENESIS 46131, then `build_german_instance.py` |
+| German network: German train classes, costs and waiting times | sources still to find (now the base paper's values) |
 
 ## Decisions
 

@@ -1,0 +1,81 @@
+id,origin,destination,category,cars_per_day,time_limit_h,revenue
+d001,1,10,Metal Ore,80,,125502
+d002,1,11,Cotton,28,,111301
+d003,1,14,Chemical fertilizer,9,,18906
+d004,2,1,Coal,105,,49873
+d005,2,3,Cotton,68,,122546
+d006,2,6,Cotton,11,,5054
+d007,2,6,Chemical product,87,,34145
+d008,2,10,Fruit,36,4.34,101492
+d009,2,11,Vegetable,97,9.46,516211
+d010,2,12,Building material,134,,165311
+d011,3,5,Fruit,153,9.75,915604
+d012,3,6,Building material,27,,26520
+d013,3,7,Metal Ore,130,,186285
+d014,3,7,Fruit,163,5.26,531367
+d015,4,2,Machinery,61,,126493
+d016,4,9,Wood,112,,282419
+d017,4,13,Cotton,134,,270396
+d018,5,3,Fruit,87,9.75,425941
+d019,5,8,Wood,107,,158167
+d020,5,12,Coke,81,,173975
+d021,5,14,Grain,158,,432310
+d022,5,15,Chemical fertilizer,35,,85087
+d023,6,5,Vegetable,161,6.09,544975
+d024,6,7,Coal,91,,12530
+d025,6,7,Cotton,91,,27112
+d026,6,12,Wood,72,,170052
+d027,6,14,Machinery,6,,689
+d028,7,14,Machinery,174,,23975
+d029,8,9,Coal,95,,109035
+d030,8,12,Chemical product,117,,267730
+d031,9,3,Petroleum,154,,219676
+d032,9,3,Wood,94,,168398
+d033,9,4,Chemical fertilizer,195,,430330
+d034,9,5,Chemical fertilizer,153,,256983
+d035,9,6,Fruit,97,1.04,52028
+d036,10,1,Cotton,7,,18062
+d037,10,2,Wood,176,,278629
+d038,10,7,Metal Ore,80,,78984
+d039,10,8,Machinery,168,,490230
+d040,10,15,Vegetable,62,1.83,62980
+d041,10,16,Metal Ore,174,,409654
+d042,10,19,Cotton,179,,356148
+d043,11,6,Coke,154,,435271
+d044,11,10,Chemical product,86,,185737
+d045,11,10,Machinery,58,,88238
+d046,12,8,Chemical fertilizer,44,,91106
+d047,12,11,Cotton,190,,381485
+d048,12,16,Coke,146,,297125
+d049,13,1,Machinery,58,,153777
+d050,13,6,Petroleum,9,,17642
+d051,13,16,Building material,49,,63154
+d052,13,19,Petroleum,148,,276311
+d053,14,5,Coal,72,,64098
+d054,14,10,Coke,165,,166324
+d055,14,11,Metal Ore,159,,363130
+d056,14,12,Chemical product,34,,74328
+d057,14,16,Vegetable,133,8.46,711211
+d058,14,18,Metal Ore,70,,41490
+d059,15,5,Machinery,163,,359240
+d060,15,7,Chemical fertilizer,108,,85311
+d061,15,10,Chemical fertilizer,10,,7845
+d062,15,14,Wood,40,,20729
+d063,15,19,Coal,123,,166592
+d064,15,19,Coke,160,,537578
+d065,16,5,Vegetable,112,3.15,209162
+d066,16,11,Coke,184,,672738
+d067,17,8,Chemical fertilizer,191,,422311
+d068,17,9,Building material,193,,98371
+d069,17,10,Vegetable,133,5.76,506043
+d070,17,11,Chemical product,140,,515045
+d071,17,13,Coke,59,,189205
+d072,17,16,Chemical product,151,,329741
+d073,17,18,Chemical fertilizer,31,,32601
+d074,18,6,Vegetable,12,2.26,13713
+d075,18,13,Grain,178,,591966
+d076,18,14,Chemical fertilizer,51,,43419
+d077,19,6,Chemical fertilizer,111,,243473
+d078,19,13,Cotton,4,,11314
+d079,19,17,Vegetable,31,2.2,36012
+d080,19,18,Wood,77,,96755

@@ -115,12 +115,19 @@ def rail_matrix(yards):
     ox.settings.use_cache = True
     ox.settings.log_console = False
     ox.settings.requests_timeout = 600
+    # Fewer, larger Overpass queries: with the default (50 x 50 km) Germany is split into about
+    # 184 queries, which takes hours; with this setting it is about 10.
+    ox.settings.max_query_area_size = 50_000_000_000
     # main-line rail only: no sidings, yards, spurs or crossovers
     rail_filter = '["railway"="rail"]["service"!~"siding|yard|spur|crossover"]'
     print("Downloading German rail network from OpenStreetMap (first run is slow)...")
     G = ox.graph_from_place("Germany", custom_filter=rail_filter, simplify=True, retain_all=True)
     G = ox.convert.to_undirected(G)
     print(f"  rail graph: {G.number_of_nodes():,} nodes, {G.number_of_edges():,} edges")
+    # Keep only the main connected network, so that no yard is matched to a short isolated
+    # piece of track (this happened to Mannheim Rbf, whose yard tracks are filtered out).
+    G = G.subgraph(max(nx.connected_components(G), key=len)).copy()
+    print(f"  main connected network: {G.number_of_nodes():,} nodes, {G.number_of_edges():,} edges")
 
     nodes = ox.distance.nearest_nodes(G, X=list(yards["Longitude"]), Y=list(yards["Latitude"]))
     names = list(yards["Yard"])

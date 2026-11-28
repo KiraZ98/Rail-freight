@@ -16,11 +16,20 @@ AMORE_network_data.xlsx
   Sources & status   What is done and what is still to do.
 
 build_distances.py
-  Run on your laptop (internet needed). Finds each yard's coordinates and computes
-  shortest rail distances between yards from OpenStreetMap (OSMnx + NetworkX,
-  lecture 4 slides 26-27). Instructions are at the top of the file.
+  Finds each yard's coordinates (OpenStreetMap / Nominatim, or the Latitude and Longitude columns
+  of the Yards sheet) and computes shortest rail distances between the model yards on the
+  OpenStreetMap main-line rail network (OSMnx + NetworkX, lecture 4 slides 26-27). Yards are
+  matched to the main connected network. Outputs:
+    yard_coordinates.csv     lat/lon per yard (8 yards were located by their OSM railway
+                             objects because the query names in the sheet were not found)
+    distance_matrix_km.csv   rail distances between the 20 model yards
+    distance_method.txt      how they were computed (all pairs on the rail graph)
+  The first run downloads the German rail network (about 25 minutes); OSMnx caches it in cache/.
+
+build_german_instance.py (repository folder)
+  Turns these files into model instances: data/instances/german_V19_D80_seed1..3.
 
 Still manual
-  1. Base paper (Xin, Wu & Wang 2025): download via TU Dresden network/VPN.
-  2. Destatis GENESIS table 46131 (origin-destination): download CSV, paste into Demand.
-  3. DB Cargo planner (planner.dbcargo.com): transit times between yards, by hand.
+  1. Destatis GENESIS table 46131 (origin-destination): download CSV, paste into Demand, to
+     replace the synthetic demand.
+  2. DB Cargo planner (planner.dbcargo.com): transit times between yards, by hand.

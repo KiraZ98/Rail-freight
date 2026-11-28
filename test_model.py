@@ -140,6 +140,20 @@ def test_tracks_from_capacity():
     assert data["tracks"] == {v: tracks_from_capacity(c) for v, c in data["classification_capacity"].items()}
 
 
+def test_german_network_data():
+    # The German network: Bundestag track counts, capacity = tracks x 76, real rail distances
+    from read_data import CARS_PER_TRACK_DAY
+    data = read_data(Path(__file__).parent / "data" / "instances" / "german_V19_D80_seed1")
+    assert len(data["stations"]) == 19                     # top 20 yards, Seddin and Seddin Sued merged
+    assert data["tracks"]["1"] == 134                      # Mannheim Rbf (Bundestag 19/26856)
+    assert data["tracks"]["13"] == 40 + 20                 # Seddin incl. Seddin Sued
+    for v, tracks in data["tracks"].items():
+        assert data["classification_capacity"][v] == tracks * CARS_PER_TRACK_DAY
+    for (i, j, c), km in data["mileage"].items():
+        assert km > 0 and km == data["mileage"][j, i, c]  # rail distances: positive and symmetric
+    assert len(data["services"]) == 19 * 18 * 3
+
+
 def test_no_revenue_no_service():
     # Xin (2022) gives no revenue, so without eps the profit model serves nothing
     result = solve(read_data(XIN2022))
@@ -224,6 +238,7 @@ if __name__ == "__main__":
     test_no_revenue_no_service()
     test_eps_constraint()
     test_tracks_from_capacity()
+    test_german_network_data()
     test_track_limit()
     test_track_limit_needs_data()
     test_greedy_second_stage()
